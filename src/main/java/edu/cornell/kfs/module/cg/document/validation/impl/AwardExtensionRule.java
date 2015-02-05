@@ -1,7 +1,9 @@
 package edu.cornell.kfs.module.cg.document.validation.impl;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.kuali.kfs.module.cg.businessobject.Award;
@@ -11,7 +13,9 @@ import org.kuali.kfs.module.cg.businessobject.AwardProjectDirector;
 import org.kuali.kfs.module.cg.businessobject.Proposal;
 import org.kuali.kfs.module.cg.document.validation.impl.AwardRule;
 import org.kuali.kfs.sys.KFSPropertyConstants;
+import org.kuali.kfs.sys.context.SpringContext;
 import org.kuali.rice.kns.document.MaintenanceDocument;
+import org.kuali.rice.krad.service.BusinessObjectService;
 
 import edu.cornell.kfs.module.cg.businessobject.AwardExtendedAttribute;
 import edu.cornell.kfs.sys.CUKFSKeyConstants;
@@ -25,6 +29,7 @@ public class AwardExtensionRule extends AwardRule {
     	success &= super.processCustomRouteDocumentBusinessRules(document);
     	success &= checkFinalFinancialReportRequired();
         success &= checkForDuplicateAccoutnts();
+        success &= checkAccoutntsNotUsedOnOtherAwards();
         success &= checkForDuplicateAwardProjectDirector();
         success &= checkForDuplicateAwardOrganization();
     	
@@ -126,6 +131,33 @@ public class AwardExtensionRule extends AwardRule {
             }
         }
         return success;
+    }
+    
+	protected boolean checkAccoutntsNotUsedOnOtherAwards() {
+        boolean success = true;
+        String accountNumber;
+        String accountChart;
+        
+        Collection<AwardAccount> awardAccounts = newAwardCopy.getAwardAccounts();
+
+        //validate if the newly entered award account is already used on another award
+        for(AwardAccount account: awardAccounts){
+            if(account!=null && StringUtils.isNotEmpty(account.getAccountNumber())){
+                accountNumber = account.getAccountNumber();
+                accountChart  = account.getChartOfAccountsCode();
+                Map<String, Object> fieldValues = new HashMap<String, Object>();
+                fieldValues.put(KFSPropertyConstants.CHART_OF_ACCOUNTS_CODE, accountChart);
+                fieldValues.put(KFSPropertyConstants.ACCOUNT_NUMBER, accountNumber);
+                fieldValues.put(KFSPropertyConstants.ACTIVE, Boolean.TRUE);
+            
+                boolean alreadyUsed = SpringContext.getBean(BusinessObjectService.class).countMatching(AwardAccount.class, fieldValues) > 0;
+                if (alreadyUsed){
+                   putFieldError(KFSPropertyConstants.AWARD_ACCOUNTS, CUKFSKeyConstants.ERROR_AWARD_ACCOUNT_ALREADY_IN_USE, accountChart + "-" + accountNumber);
+                   return false;
+                }
+            }    
+         }        
+         return success;     
     }
     
 }
