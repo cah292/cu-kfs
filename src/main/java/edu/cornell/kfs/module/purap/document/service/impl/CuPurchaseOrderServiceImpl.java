@@ -2,9 +2,14 @@ package edu.cornell.kfs.module.purap.document.service.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.kuali.kfs.module.purap.PurapConstants;
@@ -14,6 +19,7 @@ import org.kuali.kfs.module.purap.PurapConstants.PurchaseOrderStatuses;
 import org.kuali.kfs.module.purap.PurapConstants.RequisitionSources;
 import org.kuali.kfs.module.purap.PurapKeyConstants;
 import org.kuali.kfs.module.purap.PurapParameterConstants;
+import org.kuali.kfs.module.purap.batch.AutoCloseRecurringOrdersStep;
 import org.kuali.kfs.module.purap.businessobject.AutoClosePurchaseOrderView;
 import org.kuali.kfs.module.purap.businessobject.PaymentRequestView;
 import org.kuali.kfs.module.purap.document.PurchaseOrderDocument;
@@ -22,7 +28,9 @@ import org.kuali.kfs.module.purap.document.service.impl.PurchaseOrderServiceImpl
 import org.kuali.kfs.module.purap.util.PurApRelatedViews;
 import org.kuali.kfs.sys.KFSConstants;
 import org.kuali.kfs.sys.context.SpringContext;
+import org.kuali.kfs.sys.document.validation.event.AttributedRouteDocumentEvent;
 import org.kuali.kfs.vnd.businessobject.VendorDetail;
+import org.kuali.rice.core.api.mail.MailMessage;
 import org.kuali.rice.core.api.util.type.KualiDecimal;
 import org.kuali.rice.coreservice.framework.parameter.ParameterService;
 import org.kuali.rice.kew.api.exception.WorkflowException;
@@ -33,8 +41,10 @@ import org.kuali.rice.krad.bo.PersistableBusinessObject;
 import org.kuali.rice.krad.exception.ValidationException;
 import org.kuali.rice.krad.service.AttachmentService;
 import org.kuali.rice.krad.service.DocumentService;
+import org.kuali.rice.krad.util.ErrorMessage;
 import org.kuali.rice.krad.util.GlobalVariables;
 import org.kuali.rice.krad.util.ObjectUtils;
+import org.springframework.util.AutoPopulatingList;
 
 import edu.cornell.kfs.module.purap.CUPurapConstants;
 
@@ -225,5 +235,166 @@ public class CuPurchaseOrderServiceImpl extends PurchaseOrderServiceImpl {
         purapService.saveDocumentNoValidation(poDoc);
         return poDoc;
     }   //  mjmc end
+    
+    /**
+     * @see org.kuali.kfs.module.purap.document.service.PurchaseOrderService#autoCloseRecurringOrders()
+     */
+    @Override
+    public boolean autoCloseRecurringOrders() {
+        LOG.debug("autoCloseRecurringOrders() started");
+        boolean shouldSendEmail = true;
+        MailMessage message = new MailMessage();
+        String parameterEmail = parameterService.getParameterValueAsString(AutoCloseRecurringOrdersStep.class, PurapParameterConstants.AUTO_CLOSE_RECURRING_PO_TO_EMAIL_ADDRESSES);
+
+        if (StringUtils.isEmpty(parameterEmail)) {
+            // Don't stop the show if the email address is wrong, log it and continue.
+            LOG.error("autoCloseRecurringOrders(): parameterEmail is missing, we'll not send out any emails for this job.");
+            shouldSendEmail = false;
+        }
+        if (shouldSendEmail) {
+            message = setMessageAddressesAndSubject(message, parameterEmail);
+        }
+        StringBuffer emailBody = new StringBuffer();
+        StringBuffer emailBodyInvalidPOs = new StringBuffer();
+        // There should always be a "AUTO_CLOSE_RECURRING_ORDER_DT"
+        // row in the table, this method sets it to "mm/dd/yyyy" after processing.
+        String recurringOrderDateString = parameterService.getParameterValueAsString(AutoCloseRecurringOrdersStep.class, PurapParameterConstants.AUTO_CLOSE_RECURRING_PO_DATE);
+        boolean validDate = true;
+        java.util.Date recurringOrderDate = null;
+        try {
+            recurringOrderDate = dateTimeService.convertToDate(recurringOrderDateString);
+        }
+        catch (ParseException pe) {
+            validDate = false;
+        }
+        if (StringUtils.isEmpty(recurringOrderDateString) || recurringOrderDateString.equalsIgnoreCase("mm/dd/yyyy") || (!validDate)) {
+            if (recurringOrderDateString.equalsIgnoreCase("mm/dd/yyyy")) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("autoCloseRecurringOrders(): mm/dd/yyyy " + "was found in the Application Settings table. No orders will be closed, method will end.");
+                }
+                if (shouldSendEmail) {
+                    emailBody.append("The AUTO_CLOSE_RECURRING_ORDER_DT found in the Application Settings table " + "was mm/dd/yyyy. No recurring PO's were closed.");
+                }
+            }
+            else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("autoCloseRecurringOrders(): An invalid autoCloseRecurringOrdersDate " + "was found in the Application Settings table: " + recurringOrderDateString + ". Method will end.");
+                }
+                if (shouldSendEmail) {
+                    emailBody.append("An invalid AUTO_CLOSE_RECURRING_ORDER_DT was found in the Application Settings table: " + recurringOrderDateString + ". No recurring PO's were closed.");
+                }
+            }
+            if (shouldSendEmail) {
+                sendMessage(message, emailBody.toString());
+            }
+            LOG.info("autoCloseRecurringOrders() ended");
+
+            return false;
+        }
+        LOG.info("autoCloseRecurringOrders() The autoCloseRecurringOrdersDate found in the Application Settings table was " + recurringOrderDateString);
+        if (shouldSendEmail) {
+            emailBody.append("The autoCloseRecurringOrdersDate found in the Application Settings table was " + recurringOrderDateString + ".");
+        }
+        Calendar appSettingsDate = dateTimeService.getCalendar(recurringOrderDate);
+        Timestamp appSettingsDay = new Timestamp(appSettingsDate.getTime().getTime());
+
+        Calendar todayMinusThreeMonths = getTodayMinusThreeMonths();
+        Timestamp threeMonthsAgo = new Timestamp(todayMinusThreeMonths.getTime().getTime());
+
+        if (appSettingsDate.after(todayMinusThreeMonths)) {
+            LOG.info("autoCloseRecurringOrders() The appSettingsDate: " + appSettingsDay + " is after todayMinusThreeMonths: " + threeMonthsAgo + ". The program will end.");
+            if (shouldSendEmail) {
+                emailBody.append("\n\nThe autoCloseRecurringOrdersDate: " + appSettingsDay + " is after todayMinusThreeMonths: " + threeMonthsAgo + ". The program will end.");
+                sendMessage(message, emailBody.toString());
+            }
+            LOG.info("autoCloseRecurringOrders() ended");
+
+            return false;
+        }
+
+        List<AutoClosePurchaseOrderView> closeList = purchaseOrderDao.getAutoCloseRecurringPurchaseOrders(getExcludedVendorChoiceCodes());
+
+        // we need to eliminate the AutoClosePurchaseOrderView whose workflowdocument status is not OPEN..
+        // KFSMI-7533
+        List<AutoClosePurchaseOrderView> purchaseOrderAutoCloseList = filterDocumentsForAppDocStatusOpen(closeList);
+
+        LOG.info("autoCloseRecurringOrders(): " + purchaseOrderAutoCloseList.size() + " PO's were returned for processing.");
+        int counter = 0;
+        int counterInvalidPOs = 0;
+        for (AutoClosePurchaseOrderView poAutoClose : purchaseOrderAutoCloseList) {
+            LOG.info("autoCloseRecurringOrders(): Testing PO ID " + poAutoClose.getPurapDocumentIdentifier() + ". recurringPaymentEndDate: " + poAutoClose.getRecurringPaymentEndDate());
+            if (poAutoClose.getRecurringPaymentEndDate().before(threeMonthsAgo)) {
+                String newStatus = PurapConstants.PurchaseOrderStatuses.APPDOC_PENDING_CLOSE;
+                String annotation = "This recurring PO was automatically closed in batch.";
+                String documentType = PurapConstants.PurchaseOrderDocTypes.PURCHASE_ORDER_CLOSE_DOCUMENT;
+                PurchaseOrderDocument document = getPurchaseOrderByDocumentNumber(poAutoClose.getDocumentNumber());
+                boolean rulePassed = kualiRuleService.applyRules(new AttributedRouteDocumentEvent("", document));
+
+                boolean success = rulePassed && GlobalVariables.getMessageMap().hasNoErrors();
+                if (success) {
+                    ++counter;
+                    if (counter == 1) {
+                        emailBody.append("\n\nThe following recurring Purchase Orders will be closed by auto close recurring batch job \n");
+                    }
+                    LOG.info("autoCloseRecurringOrders() PO ID " + poAutoClose.getPurapDocumentIdentifier() + " will be closed.");
+                    createNoteForAutoCloseOrders(document, annotation);
+                    createAndRoutePotentialChangeDocument(poAutoClose.getDocumentNumber(), documentType, annotation, null, newStatus);
+                    if (shouldSendEmail) {
+                        emailBody.append("\n\n" + counter + " PO ID: " + poAutoClose.getPurapDocumentIdentifier() + ", End Date: " + poAutoClose.getRecurringPaymentEndDate() + ", Status: " + poAutoClose.getApplicationDocumentStatus() + ", VendorChoice: " + poAutoClose.getVendorChoiceCode() + ", RecurringPaymentType: " + poAutoClose.getRecurringPaymentTypeCode());
+                    }
+                }
+                else {
+                	++ counterInvalidPOs;
+                	 if (counterInvalidPOs == 1) {
+                		 emailBodyInvalidPOs.append("\n\n\nThe following recurring Purchase Orders will not be closed by auto close recurring batch job because they are invalid \n");
+                     }
+
+                	LOG.error("\n\nautoCloseRecurringOrders() PO ID " + poAutoClose.getPurapDocumentIdentifier() + " was not closed because it is not valid." + getErrorMessages());
+                	
+                	emailBodyInvalidPOs.append("\n\n" + counterInvalidPOs +" PO ID: " + poAutoClose.getPurapDocumentIdentifier() + " was not closed because it is not valid. " + getErrorMessages());
+
+                    // If it was unsuccessful, we have to clear the error map in the GlobalVariables so that the previous
+                    // error would not still be lingering around and the next PO in the list can be validated.
+                    GlobalVariables.getMessageMap().clearErrorMessages();
+                }
+            }
+        }
+        if (counter == 0) {
+            LOG.info("\n\nNo recurring PO's fit the conditions for closing.");
+            if (shouldSendEmail) {
+                emailBody.append("\n\nNo recurring PO's fit the conditions for closing.");
+            }
+        }
+        if(emailBodyInvalidPOs.length() > 0){
+        	emailBody.append(emailBodyInvalidPOs.toString());
+        }
+        if (shouldSendEmail) {
+            sendMessage(message, emailBody.toString());
+        }
+        resetAutoCloseRecurringOrderDateParameter();
+        LOG.debug("autoCloseRecurringOrders() ended");
+
+        return true;
+    }
+    
+    /**
+     * Gets error messages from GlobalVariables as a String.
+     */
+    protected String getErrorMessages() {
+    	String message = "\nErrors: \n";
+        Map<String, AutoPopulatingList<ErrorMessage>> errors = GlobalVariables.getMessageMap().getErrorMessages();
+        for (AutoPopulatingList<ErrorMessage> error : errors.values()) {
+            Iterator<ErrorMessage> iterator = error.iterator();
+            
+            while (iterator.hasNext()) {
+                ErrorMessage errorMessage = iterator.next();
+                String resourceMessage = kualiConfigurationService.getPropertyValueAsString(errorMessage.getErrorKey());
+                resourceMessage = MessageFormat.format(resourceMessage, (Object[]) errorMessage.getMessageParameters());
+                message += resourceMessage + "\n ";
+            }
+        }
+        
+        return message;
+    }
     
 }
