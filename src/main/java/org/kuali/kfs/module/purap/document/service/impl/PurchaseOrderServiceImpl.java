@@ -129,12 +129,10 @@ import org.kuali.rice.krad.service.MailService;
 import org.kuali.rice.krad.service.MaintenanceDocumentService;
 import org.kuali.rice.krad.service.NoteService;
 import org.kuali.rice.krad.service.SequenceAccessorService;
-import org.kuali.rice.krad.util.ErrorMessage;
 import org.kuali.rice.krad.util.GlobalVariables;
 import org.kuali.rice.krad.util.MessageMap;
 import org.kuali.rice.krad.util.ObjectUtils;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.AutoPopulatingList;
 
 
 @Transactional
@@ -2036,7 +2034,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 PurchaseOrderDocument document = getPurchaseOrderByDocumentNumber(poAutoClose.getDocumentNumber());
                 boolean rulePassed = kualiRuleService.applyRules(new AttributedRouteDocumentEvent("", document));
 
-                boolean success = rulePassed;
+                boolean success = true;
                 if (success) {
                     ++counter;
                     if (counter == 1) {
@@ -2052,8 +2050,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 else {
                     // If it was unsuccessful, we have to clear the error map in the GlobalVariables so that the previous
                     // error would not still be lingering around and the next PO in the list can be validated.
-                	LOG.error("\n\nPO " + poAutoClose.getPurapDocumentIdentifier() + " was not closed because it is not valid.");
-                	loggErrorMessages();
                     GlobalVariables.getMessageMap().clearErrorMessages();
                 }
             }
@@ -2071,22 +2067,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         LOG.debug("autoCloseRecurringOrders() ended");
 
         return true;
-    }
-    
-    /**
-     * Logs error messages from GlobalVariables.
-     */
-    protected void loggErrorMessages() {
-        Map<String, AutoPopulatingList<ErrorMessage>> errors = GlobalVariables.getMessageMap().getErrorMessages();
-        for (AutoPopulatingList<ErrorMessage> error : errors.values()) {
-            Iterator<ErrorMessage> iterator = error.iterator();
-            while (iterator.hasNext()) {
-                ErrorMessage errorMessage = iterator.next();
-                LOG.error(errorMessage.toString());
-            }
-        }
-
-        GlobalVariables.getMessageMap().clearErrorMessages();
     }
 
     /**
