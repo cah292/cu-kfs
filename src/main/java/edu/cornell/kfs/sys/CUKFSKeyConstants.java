@@ -111,8 +111,5 @@ public class CUKFSKeyConstants extends KFSKeyConstants {
 	    // KFSPTS-3416
 	    public static final String MESSAGE_DONE_FILE_ALREADY_EXISTS = "message.system.batch.doneFileAlreadyExists";
 	    public static final String MESSAGE_DONE_FILE_SUCCESSFULLY_CREATED = "message.system.batch.doneFileSuccessfullyCreated";
-	    	    
-	    // KFSPTS-3933
-	    public static final String ERROR_AWARD_ACCOUNT_ALREADY_IN_USE = "error.award.awardAccount.alreadyInUse";
-	    
+
 }
