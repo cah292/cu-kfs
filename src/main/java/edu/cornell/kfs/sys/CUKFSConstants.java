@@ -101,9 +101,5 @@ public class CUKFSConstants {
     public static class ChartApcParms{
     	public static final String EXPIRATION_DATE_BACKDATING_FUND_GROUPS = "EXPIRATION_DATE_BACKDATING_FUND_GROUPS";
     }
-    
-    public static class CGPArms{
-    	public static final String ACCOUNTS_EXEMPT_FROM_USED_ON_OTHER_AWARDS_VALIDATION = "ACCOUNTS_EXEMPT_FROM_USED_ON_OTHER_AWARDS_VALIDATION";
-    }
         
 }
