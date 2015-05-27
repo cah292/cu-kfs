@@ -45,8 +45,6 @@
         <property name="moduleConfiguration" ref="cu-fp"/>
     </bean>
 
-    <bean id="procurementCardCreateDocumentService" class="edu.cornell.kfs.fp.batch.service.impl.ProcurementCardCreateDocumentServiceImpl" parent="procurementCardCreateDocumentService-parentBean"/>
-    
     <bean id="procurementCardDocumentJob" parent="scheduledJobDescriptor">
         <property name="steps">
             <list>
@@ -66,8 +64,7 @@
             </list>
         </property>
     </bean>
-    
-    <bean id="procurementCardLoadTransactionsService"  parent="procurementCardLoadTransactionsService-parentBean"/> 
+
     <bean id="procurementCardLoadFlatTransactionsService" class="edu.cornell.kfs.fp.batch.service.impl.ProcurementCardLoadFlatTransactionsServiceImpl" parent="procurementCardLoadTransactionsService-parentBean" >
         <property name="procurementCardInputFileType">
             <ref bean="procurementCardFlatInputFileType" />
@@ -166,8 +163,6 @@
         </property>
     </bean>
     
-     <bean id="procurementCardInputFileType"  parent="procurementCardInputFileType-parentBean"/>
-    
     <bean id="procurementCardErrorEmailService" class="edu.cornell.kfs.fp.batch.service.impl.ProcurementCardErrorEmailServiceImpl">
         <property name="parameterService">
             <ref bean="parameterService"/>
@@ -227,6 +222,67 @@
 	
 	<bean id="disbursementVoucherDao" class="edu.cornell.kfs.fp.dataaccess.impl.CuDisbursementVoucherDaoOjb" parent="platformAwareDao" />
 
+  <!-- KFSPTS-4030 -->
+  <bean id="procurementCardInputFileType" class="org.kuali.kfs.fp.batch.ProcurementCardInputFileType" parent="procurementCardInputFileType-parentBean"> 
+    <property name="directoryPath">
+      <value>${staging.directory}/fp/procurementCard</value>
+    </property>
+    <property name="fileExtension">
+      <value>xml</value>
+    </property>
+    <property name="digestorRulesFileName">
+      <value>edu/cornell/kfs/fp/batch/pcdoDigesterRules.xml</value>
+    </property>
+    <property name="schemaLocation">
+      <value>${externalizable.static.content.url}/xsd/fp/procurementCard.xsd</value>
+    </property>
+    <property name="dateTimeService">
+      <ref bean="dateTimeService"/>
+    </property>
+  </bean>
+
+  <bean id="procurementCardLoadTransactionsService" class="edu.cornell.kfs.fp.batch.service.impl.CuProcurementCardLoadTransactionsServiceImpl" parent="procurementCardLoadTransactionsService-parentBean">
+    <property name="businessObjectService">
+      <ref bean="businessObjectService" />
+    </property>
+    <property name="batchInputFileService">
+      <ref bean="batchInputFileService" />
+    </property>
+    <property name="procurementCardInputFileType">
+      <ref bean="procurementCardInputFileType" />
+    </property>
+    <property name="sequenceAccessorService">
+      <ref bean="sequenceAccessorService" />
+    </property>
+  </bean>
+
+  <bean id="procurementCardCreateDocumentService" class="edu.cornell.kfs.fp.batch.service.impl.CuProcurementCardCreateDocumentServiceImpl" parent="procurementCardCreateDocumentService-parentBean">
+    <property name="parameterService">
+      <ref bean="parameterService" />
+    </property>
+    <property name="businessObjectService">
+      <ref bean="businessObjectService" />
+    </property>
+    <property name="documentService">
+      <ref bean="documentService" />
+    </property>
+    <property name="dataDictionaryService">
+      <ref bean="dataDictionaryService" />
+    </property>
+    <property name="dateTimeService">
+      <ref bean="dateTimeService" />
+    </property>
+    <property name="workflowDocumentService">
+      <ref bean="workflowDocumentService" />
+    </property>
+    <property name="accountingLineRuleUtil">
+      <ref bean="accountingLineRuleHelperService" />
+    </property>
+    <property name="capitalAssetBuilderModuleService">
+      <ref bean="capitalAssetBuilderModuleService" />
+    </property>
+  </bean>
+  <!-- End KFSPTS-4030 -->
     
     <!--  Validations -->
     <bean id="AuxliaryVoucher-accountingDocumentSingleSubFundValidation" class="edu.cornell.kfs.fp.document.validation.impl.CuAuxiliaryVoucherSingleSubFundValidation" abstract="true" />

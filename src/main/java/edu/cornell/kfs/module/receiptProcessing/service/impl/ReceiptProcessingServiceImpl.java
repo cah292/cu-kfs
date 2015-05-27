@@ -225,7 +225,7 @@ public class ReceiptProcessingServiceImpl implements ReceiptProcessingService {
 				pdateSQL = new Date(pdate.getTime());
 			}
 
-			List<ProcurementCardDocument> pcdoList = procurementCardDocumentDao.getDocumentByCarhdHolderAmountDateVendor(receipt.getCardHolder(), receipt.getAmount(), pdateSQL);
+            List<ProcurementCardDocument> pcdoList = procurementCardDocumentDao.getDocumentByCardHolderAmountDateVendor(receipt.getCardHolder(), receipt.getAmount(), pdateSQL);
 			ProcurementCardDocument pcdo = null;
 
 			if (ObjectUtils.isNull(pcdoList) || pcdoList.isEmpty()) {
@@ -279,7 +279,7 @@ public class ReceiptProcessingServiceImpl implements ReceiptProcessingService {
 			     */
 			    LOG.error("Failed to create attachment for Document " + pcdo.getDocumentNumber(), e);
 			    processResults.append(receipt.attachmentCreationError(false));
-			    continue;
+				continue;
 			}
 
 			if (noteAttachment != null) {
@@ -350,7 +350,7 @@ public class ReceiptProcessingServiceImpl implements ReceiptProcessingService {
 					pdateSQL = new Date(pdate.getTime());
 				}
 
-				List<ProcurementCardDocument> pcdoList = procurementCardDocumentDao.getDocumentByCarhdHolderNameAmountDateCardHolderNetID(receipt.getAmount(), pdateSQL, receipt.getCardHolderNetID());
+				List<ProcurementCardDocument> pcdoList = procurementCardDocumentDao.getDocumentByCardHolderNameAmountDateCardHolderNetID(receipt.getAmount(), pdateSQL, receipt.getCardHolderNetID());
 				ProcurementCardDocument pcdo = null;
 
 				if (ObjectUtils.isNull(pcdoList) || pcdoList.isEmpty()) {
@@ -428,7 +428,7 @@ public class ReceiptProcessingServiceImpl implements ReceiptProcessingService {
 				     */
 				    LOG.error("Failed to create attachment for Document " + pcdo.getDocumentNumber(), e);
 				    processResults.append(receipt.attachmentCreationError(true));
-				    continue;
+					continue;
 				}
 
 				if (noteAttachment != null) {
