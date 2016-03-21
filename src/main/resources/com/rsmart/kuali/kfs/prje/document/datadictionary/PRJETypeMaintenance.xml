@@ -1,0 +1,223 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="PRJETypeMaintenanceDocument" 
+        parent="PRJETypeMaintenanceDocument-parentBean" />
+
+  <bean id="PRJETypeMaintenanceDocument-parentBean" abstract="true" 
+        parent="MaintenanceDocumentEntry">
+        
+    <property name="businessObjectClass" 
+              value="com.rsmart.kuali.kfs.prje.businessobject.PRJEType" />
+    <property name="businessRulesClass" 
+              value="com.rsmart.kuali.kfs.prje.document.PRJETypeMaintenanceRule" />              
+    <property name="maintainableClass" 
+              value="com.rsmart.kuali.kfs.prje.document.PRJETypeMaintainable" />
+    
+    <property name="maintainableSections" >
+      <list>
+        <ref bean="PRJETypeMaintenanceDocument-EditType" />
+        <ref bean="PRJETypeMaintenanceDocument-EditBaseAccount" />
+        <ref bean="PRJETypeMaintenanceDocument-EditBaseObjectCode" />
+        <ref bean="PRJETypeMaintenanceDocument-EditToAccountingLine" />
+      </list>
+    </property>
+    <property name="allowsNewOrCopy" value="true" />
+    <property name="lockingKeys" >
+      <list>
+        <value>typeId</value>
+      </list>
+    </property>
+    
+    <property name="documentAuthorizerClass"
+              value="org.kuali.kfs.sys.document.authorization.FinancialSystemMaintenanceDocumentAuthorizerBase" />
+
+    <property name="documentTypeName" value="PRJT" />
+  </bean>
+
+<!-- Maintenance Section Definitions -->
+
+  <bean id="PRJETypeMaintenanceDocument-EditType"
+        parent="PRJETypeMaintenanceDocument-EditType-parentBean" />
+
+  <bean id="PRJETypeMaintenanceDocument-EditType-parentBean" 
+        abstract="true" parent="MaintainableSectionDefinition">
+        
+    <property name="id" value="Edit Automated Journal Vouchers Type" />
+    <property name="title" value="Edit Automated Journal Vouchers Type" />
+    <property name="maintainableItems" >
+      <list>
+        <bean parent="MaintainableFieldDefinition"
+              p:name="typeId" p:required="false"
+              p:unconditionallyReadOnly="true" />   
+        <bean parent="MaintainableFieldDefinition"
+              p:name="entryName" p:required="true" />
+        <bean parent="MaintainableFieldDefinition"
+              p:name="setId" p:required="true" />
+        <bean parent="MaintainableFieldDefinition"
+              p:name="prorateOptions" p:required="true" />              
+        <bean parent="MaintainableFieldDefinition"
+              p:name="active" p:required="false" />              
+      </list>
+    </property>
+  </bean>
+
+  <bean id="PRJETypeMaintenanceDocument-EditBaseAccount"
+        parent="PRJETypeMaintenanceDocument-EditBaseAccount-parentBean" />
+
+  <bean id="PRJETypeMaintenanceDocument-EditBaseAccount-parentBean"
+        abstract="true" parent="MaintainableSectionDefinition">
+    <property name="id" value="Edit Prorate Base Account Line" />
+    <property name="title" value="Edit Prorate Base Account Line" />
+   
+    <property name="maintainableItems">
+      <list>
+        <bean parent="MaintainableCollectionDefinition">
+	        <property name="name" value="baseAccounts"/>
+	        <property name="businessObjectClass" 
+	                  value="com.rsmart.kuali.kfs.prje.businessobject.PRJEBaseAccount"/>
+	        <property name="alwaysAllowCollectionDeletion" value="true"/>
+	        <property name="summaryTitle" value="From (Base)"/>
+	        <property name="summaryFields">
+	           <list>
+                   <bean parent="MaintainableFieldDefinition" p:name="baseChart" p:required="true"/>	           
+	               <bean parent="MaintainableFieldDefinition" p:name="baseAccount" p:required="true"/>
+                   <bean parent="MaintainableFieldDefinition" p:name="baseSubAccount" p:required="false"/>
+	           </list>
+	        </property>	        
+	        <property name="maintainableFields">
+	          <list>
+		        <bean parent="MaintainableFieldDefinition" 
+		              p:name="baseChart" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="baseAccount" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="baseSubAccount" p:required="false" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="fromChart" p:required="false" />                     
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="fromAccount" p:required="false" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="fromSubAccount" p:required="false" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="fromObjectCode" p:required="true" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="frequency" p:required="true" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="prorateType" p:required="true" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="proratePercent" p:required="false" />                      
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="prorateAmount" p:required="false" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="active" p:required="false" />
+			   </list>
+			</property>
+		</bean>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="PRJETypeMaintenanceDocument-EditBaseObjectCode"
+        parent="PRJETypeMaintenanceDocument-EditBaseObjectCode-parentBean" />
+
+  <bean id="PRJETypeMaintenanceDocument-EditBaseObjectCode-parentBean"
+        abstract="true" parent="MaintainableSectionDefinition">
+    <property name="id" value="Edit Prorate Base Object Code" />
+    <property name="title" value="Edit Prorate Base Object Code" />
+    <property name="maintainableItems" >
+      <list>
+        <bean parent="MaintainableCollectionDefinition">
+          <property name="name" value="baseObjects"/>
+          <property name="businessObjectClass" 
+                    value="com.rsmart.kuali.kfs.prje.businessobject.PRJEBaseObject"/>
+          <property name="alwaysAllowCollectionDeletion" value="true"/>
+          <property name="summaryTitle" value="Object Code"/>
+          <property name="summaryFields">
+             <list>
+                 <bean parent="MaintainableFieldDefinition" p:name="objectCodeRangeName" p:required="true"/>
+             </list>
+          </property>            
+          <property name="maintainableFields">
+            <list>            
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="objectCodeRangeName" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+                      p:name="baseChartCode" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="baseObjectCodeLow" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="baseObjectCodeHigh" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="subObjectCodeLow" p:required="false" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="subObjectCodeHigh" p:required="false" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="include" p:required="true" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="active" p:required="false" />                      
+            </list>
+          </property>
+        </bean>      
+      </list>
+    </property>
+  </bean>
+  
+  <bean id="PRJETypeMaintenanceDocument-EditToAccountingLine"
+        parent="PRJETypeMaintenanceDocument-EditToAccountingLine-parentBean" />
+
+  <bean id="PRJETypeMaintenanceDocument-EditToAccountingLine-parentBean"
+        abstract="true" parent="MaintainableSectionDefinition">
+    <property name="id" value="Edit Prorate To Accounting Line" />
+    <property name="title" value="Edit Prorate To Accounting Line" />
+    <property name="maintainableItems" >
+      <list>
+        <bean parent="MaintainableCollectionDefinition">
+          <property name="name" value="accountLines"/>
+          <property name="businessObjectClass"
+                    value="com.rsmart.kuali.kfs.prje.businessobject.PRJEAccountLine"/>
+          <property name="alwaysAllowCollectionDeletion" value="true"/>
+          <property name="summaryTitle" value="To Accounting Line"/>
+          <property name="summaryFields">
+             <list>
+                 <bean parent="MaintainableFieldDefinition" p:name="chartCode" p:required="true"/>             
+                 <bean parent="MaintainableFieldDefinition" p:name="accountNumber" p:required="true"/>
+                 <bean parent="MaintainableFieldDefinition" p:name="subAccountNumber" p:required="false"/>
+                 <bean parent="MaintainableFieldDefinition" p:name="objectCode" p:required="true"/>
+                 <bean parent="MaintainableFieldDefinition" p:name="projectCode" p:required="false"/>                 
+             </list>
+          </property>             
+          <property name="maintainableFields">
+            <list>      
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="effectiveDateFrom" p:required="false" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="effectiveDateTo" p:required="false" /> 
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="chartCode" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="accountNumber" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="subAccountNumber" p:required="false" />    
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="objectCode" p:required="true" />
+		        <bean parent="MaintainableFieldDefinition"
+		              p:name="projectCode" p:required="false" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="overrideProrateType" p:required="true" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="overridePercent" p:required="false" />                      
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="overrideAmount" p:required="false" />
+                <bean parent="MaintainableFieldDefinition"
+                      p:name="active" p:required="false" />
+            </list>
+          </property>
+        </bean>
+      </list>
+    </property>
+  </bean>
+</beans>

@@ -80,6 +80,13 @@
 	        <li><portal:portalLink displayTitle="true" title="Unit/Share Adjustment" url="endowEndowmentUnitShareAdjustmentDocument.do?methodToCall=docHandler&command=initiate&docTypeName=EUSA" /></li> 
 	    </ul>
 	  </c:if>
+
+    <strong>Automated Journal Vouchers</strong><br />
+    <ul class="chan">
+        <li><portal:portalLink displayTitle="true" title="Automated Journal Vouchers Sets"   url="kr/lookup.do?methodToCall=start&businessObjectClassName=com.rsmart.kuali.kfs.prje.businessobject.PRJESet&docFormKey=88888888&returnLocation=${ConfigProperties.application.url}/portal.do&hideReturnLink=true" /></li>
+        <li><portal:portalLink displayTitle="true" title="Automated Journal Vouchers Types"   url="kr/lookup.do?methodToCall=start&businessObjectClassName=com.rsmart.kuali.kfs.prje.businessobject.PRJEType&docFormKey=88888888&returnLocation=${ConfigProperties.application.url}/portal.do&hideReturnLink=true" /></li>
+	  </ul>
+
 	  <c:if test="${ConfigProperties.module.travel.enabled == 'true'}">	   
     <strong>Travel</strong>
     <ul class="chan">
