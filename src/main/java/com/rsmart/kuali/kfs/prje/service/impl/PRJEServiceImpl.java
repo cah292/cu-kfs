@@ -674,8 +674,8 @@ public class PRJEServiceImpl extends PRJEServiceBase implements PRJEService {
 
             // Check to see if we're in the effective date range
             Timestamp now = new Timestamp(System.currentTimeMillis());
-            Timestamp from = accountLine.getEffectiveDateFrom();
-            Timestamp to = accountLine.getEffectiveDateTo();
+            Date from = accountLine.getEffectiveDateFrom();
+            Date to = accountLine.getEffectiveDateTo();
 
             if (from != null && to != null && to.before(from)) {
                 LOG.warn("---- Effective From is After To");

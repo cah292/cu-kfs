@@ -15,6 +15,7 @@
  */
 package com.rsmart.kuali.kfs.prje.service.impl;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Collection;
@@ -116,7 +117,7 @@ public class PRJEFiscalYearImpl extends PRJEServiceBase implements PRJEFiscalYea
                             cal.setTimeInMillis(acl.getEffectiveDateFrom().getTime()); // Set time
                             cal.add(Calendar.YEAR, 1);                                 // Move up 1 year
                         
-                            accountLine.setEffectiveDateFrom(new Timestamp(cal.getTimeInMillis()));
+                            accountLine.setEffectiveDateFrom(new Date(cal.getTimeInMillis()));
                         }
                         
                         if( acl.getEffectiveDateTo() != null ) {
@@ -124,7 +125,7 @@ public class PRJEFiscalYearImpl extends PRJEServiceBase implements PRJEFiscalYea
                             cal.setTimeInMillis(acl.getEffectiveDateTo().getTime()); // Set time
                             cal.add(Calendar.YEAR, 1);                               // Move up 1 year
                         
-                            accountLine.setEffectiveDateTo(new Timestamp(cal.getTimeInMillis()));
+                            accountLine.setEffectiveDateTo(new Date(cal.getTimeInMillis()));
                         }
                         
                         accountLine.setLastUpdate(new Timestamp(new java.util.Date().getTime()));

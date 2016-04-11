@@ -17,6 +17,7 @@
 package com.rsmart.kuali.kfs.prje.businessobject;
 
 import java.io.Serializable;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.LinkedHashMap;
 
@@ -44,8 +45,8 @@ public class PRJEAccountLine
     private String overrideProrateType;   // AMT_OR_PCT
     private KualiDecimal overrideAmount;  // PRORATE_AMOUNT
     private KualiDecimal overridePercent; // PRORATE_PCT
-    private Timestamp effectiveDateFrom;  // EFFECTIVE_DT_FROM
-    private Timestamp effectiveDateTo;    // EFFECTIVE_DT_TO
+    private Date effectiveDateFrom;  // EFFECTIVE_DT_FROM
+    private Date effectiveDateTo;    // EFFECTIVE_DT_TO
     private String chartCode;             // FIN_COA_CD
     private String accountNumber;         // ACCOUNT_NBR
     private String subAccountNumber;      // SUB_ACCOUNT_NBR
@@ -145,28 +146,28 @@ public class PRJEAccountLine
     /**
      * @return the effectiveDateFrom
      */
-    public Timestamp getEffectiveDateFrom() {
+    public Date getEffectiveDateFrom() {
         return effectiveDateFrom;
     }
 
     /**
      * @param effectiveDateFrom the effectiveDateFrom to set
      */
-    public void setEffectiveDateFrom(Timestamp effectiveDateFrom) {
+    public void setEffectiveDateFrom(Date effectiveDateFrom) {
         this.effectiveDateFrom = effectiveDateFrom;
     }
 
     /**
      * @return the effectiveDateTo
      */
-    public Timestamp getEffectiveDateTo() {
+    public Date getEffectiveDateTo() {
         return effectiveDateTo;
     }
 
     /**
      * @param effectiveDateTo the effectiveDateTo to set
      */
-    public void setEffectiveDateTo(Timestamp effectiveDateTo) {
+    public void setEffectiveDateTo(Date effectiveDateTo) {
         this.effectiveDateTo = effectiveDateTo;
     }
 

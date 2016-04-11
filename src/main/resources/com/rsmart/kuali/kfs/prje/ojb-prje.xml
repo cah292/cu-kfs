@@ -52,12 +52,12 @@
         <field-descriptor
            name="effectiveDateFrom"
            column="EFFECTIVE_DT_FROM"
-           jdbc-type="TIMESTAMP" />
+           jdbc-type="DATE" />
 
         <field-descriptor
            name="effectiveDateTo"
            column="EFFECTIVE_DT_TO"
-           jdbc-type="TIMESTAMP" />
+           jdbc-type="DATE" />
            
         <field-descriptor
            name="chartCode"
