@@ -38,17 +38,24 @@
 	 	<property name="moduleConfiguration" ref="cu-cam"/>
 	</bean>
 	
- 	<bean id="assetGlobalService"  parent="assetGlobalService-parentBean"
- 	     class="edu.cornell.kfs.module.cam.document.service.impl.CuAssetGlobalServiceImpl" />
+	<bean id="cuAssetSubAccountService" class="edu.cornell.kfs.module.cam.document.service.impl.CuAssetSubAccountServiceImpl">
+        <property name="parameterService" ref="parameterService" />
+    </bean>
+
  	<bean id="assetLookupableHelperService" parent="assetLookupableHelperService-parentBean"
  	    class="edu.cornell.kfs.module.cam.businessobject.lookup.CuAssetLookupableHelperServiceImpl" scope="prototype"  />
  	     
 	<bean id="assetDepreciationService"  parent="assetDepreciationService-parentBean" class="edu.cornell.kfs.module.cam.batch.service.impl.CuAssetDepreciationServiceImpl" />
+
  	<bean id="assetService"  parent="assetService-parentBean"
  	     class="edu.cornell.kfs.module.cam.document.service.impl.CuAssetServiceImpl" />
 
     <bean id="assetTransferService"  parent="assetTransferService-parentBean" class="edu.cornell.kfs.module.cam.document.service.impl.CuAssetTransferServiceImpl">
-        <property name="parameterService" ref="parameterService" />
+        <property name="cuAssetSubAccountService" ref="cuAssetSubAccountService" />
+    </bean>
+
+    <bean id="assetGlobalService" parent="assetGlobalService-parentBean" class="edu.cornell.kfs.module.cam.document.service.impl.CuAssetGlobalServiceImpl">
+        <property name="cuAssetSubAccountService" ref="cuAssetSubAccountService" />
     </bean>
 
 </beans>
