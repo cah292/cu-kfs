@@ -58,4 +58,8 @@
         <property name="cuAssetSubAccountService" ref="cuAssetSubAccountService" />
     </bean>
 
+    <bean id="assetRetirementService" parent="assetRetirementService-parentBean">
+        <property name="cuAssetSubAccountService" ref="cuAssetSubAccountService" />
+    </bean>
+
 </beans>
