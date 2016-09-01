@@ -65,7 +65,6 @@ import edu.cornell.kfs.pdp.businessobject.PayeeACHAccountExtractDetail;
 
 public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtractService {
     private static final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(PayeeACHAccountExtractServiceImpl.class);
-    private static final int NO_FAILED_ROWS = 0;
 
     private BatchInputFileService batchInputFileService;
     private List<BatchInputFileType> batchInputFileTypes;
@@ -108,7 +107,7 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
                     LOG.info("processACHBatchDetails: Successfully loaded ACH input file");
                     numSuccess++;
                 } else {
-                    LOG.warn("processACHBatchDetails: ACH input file contained "+ Integer.toString(errorList.size()) + " rows that could not be processed.");
+                    LOG.warn("processACHBatchDetails: ACH input file contained "+ errorList.size() + " rows that could not be processed.");
                     partialProcessingSummary.put(inputFileName, errorList);
                     numPartial++;
                 }
@@ -121,19 +120,18 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         removeDoneFiles(processedFiles);
         
         LOG.info("processACHBatchDetails: ==== Summary of Payee ACH Account Extract ====");
-        LOG.info("processACHBatchDetails: Files loaded successfully: " + Integer.toString(numSuccess));
-        LOG.info("processACHBatchDetails: Files loaded with one or more failed rows: " + Integer.toString(numPartial));
+        LOG.info("processACHBatchDetails: Files loaded successfully: " + numSuccess);
+        LOG.info("processACHBatchDetails: Files loaded with one or more failed rows: " + numPartial);
         if (!partialProcessingSummary.isEmpty()) {
             for (String failingFileName : partialProcessingSummary.keySet()) {
-                ArrayList<String> errorsEncountered = (ArrayList) partialProcessingSummary.get(failingFileName);
+                List<String> errorsEncountered = partialProcessingSummary.get(failingFileName);
                 LOG.info("processACHBatchDetails: ACH input file contained "+ errorsEncountered.size() + " rows that could not be processed.");
-                for (Iterator iterator = errorsEncountered.iterator(); iterator.hasNext();) {
-                    String dataError = (String) iterator.next();
-                    LOG.info("processACHBatchDetails: " + dataError);
+                for (String dataError: errorsEncountered) {
+                    LOG.info("processACHBatchDetails: " + errorsEncountered);
                 }
             }
         }
-        LOG.info("processACHBatchDetails: Files with errors: " + Integer.toString(numFail));
+        LOG.info("processACHBatchDetails: Files with errors: " + numFail);
         LOG.info("processACHBatchDetails: ==== End Summary ====");
         
         // For now, return true even if files or rows did not load successfully. Functionals will address the failed rows/files accordingly.
@@ -217,7 +215,7 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         Person payee = personService.getPersonByPrincipalName(achDetail.getNetID());
 
         processingError = validateACHBatchDetail(achDetail, payee);
-        if (ObjectUtils.isNotNull(processingError)) {
+        if (ObjectUtils.isNotNull(processingError) && StringUtils.isNotBlank(processingError)) {
             return processingError;
         }
         
@@ -344,7 +342,7 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
             LOG.warn("validateACHBatchDetail:" + failureMessage.toString());
             return failureMessage.toString();
         }
-        return null;
+        return KFSConstants.EMPTY_STRING;
     }
 
     /**
@@ -419,7 +417,7 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
                     getPayeeACHAccountAddOrUpdateEmailSubject(true), getUnresolvedPayeeACHAccountAddOrUpdateEmailBody(true));
 
             return processingError;
-
+            
         } catch (Exception e) {
             LOG.error("addACHAccount STE " + e.getStackTrace() + e.toString());
             LOG.error(getFailRequestMessage(e));
@@ -644,8 +642,6 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         return resolvedEmailBody.toString();
     }
 
-
-
     /*
      * Copied this method from VendorBatchServiceImpl and tweaked accordingly.
      */
@@ -673,8 +669,6 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
     private Person getSystemUser() {
         return personService.getPersonByPrincipalName(KFSConstants.SYSTEM_USER);
     }
-
-
 
     /**
      * Accepts a file name and returns a byte-array of the file name contents, if possible.
@@ -750,8 +744,6 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         LOG.error(errorMessage);
         throw new RuntimeException(errorMessage);
     }    
-
-
 
     public void setBatchInputFileService(BatchInputFileService batchInputFileService) {
         this.batchInputFileService = batchInputFileService;
