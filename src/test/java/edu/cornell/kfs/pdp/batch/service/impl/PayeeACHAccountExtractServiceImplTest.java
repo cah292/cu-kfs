@@ -9,6 +9,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -53,6 +54,7 @@ import org.kuali.rice.krad.service.DocumentService;
 import org.kuali.rice.krad.service.SequenceAccessorService;
 import org.kuali.rice.krad.service.impl.DocumentServiceImpl;
 import org.kuali.rice.krad.util.KRADPropertyConstants;
+import org.kuali.rice.krad.util.ObjectUtils;
 
 import edu.cornell.kfs.coa.businessobject.options.CUCheckingSavingsValuesFinder;
 import edu.cornell.kfs.pdp.CUPdpConstants;
@@ -112,6 +114,8 @@ public class PayeeACHAccountExtractServiceImplTest {
     private static final String PERSONAL_SAVINGS_ACCOUNT_TYPE_LABEL = "Personal Savings";
 
     private TestPayeeACHAccountExtractService payeeACHAccountExtractService;
+    
+    private static final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(PayeeACHAccountExtractServiceImplTest.class);
 
     @Before
     public void setUp() throws Exception {
@@ -564,15 +568,16 @@ public class PayeeACHAccountExtractServiceImplTest {
         private List<PayeeACHAccountExtractDetail> successfulDetails = new ArrayList<>();
         
         @Override
-        protected int loadACHBatchDetailFile(String inputFileName, BatchInputFileType batchInputFileType) {
+        protected List<String> loadACHBatchDetailFile(String inputFileName, BatchInputFileType batchInputFileType) {
             try {
-                int numRowsFailed = super.loadACHBatchDetailFile(inputFileName, batchInputFileType);
-                if (numRowsFailed == 0) {
+                List<String>failedRowsErrors = new ArrayList<String>();
+                failedRowsErrors = super.loadACHBatchDetailFile(inputFileName, batchInputFileType);
+                if (failedRowsErrors.isEmpty()) {
                     fileResults.incrementNumSuccessfulFiles();
                 } else {
                     fileResults.incrementNumFilesWithBadRows();
                 }
-                return numRowsFailed;
+                return failedRowsErrors;
             } catch (Exception e) {
                 fileResults.incrementNumBadFiles();
                 throw e;
@@ -580,19 +585,19 @@ public class PayeeACHAccountExtractServiceImplTest {
         }
         
         @Override
-        protected boolean processACHBatchDetail(PayeeACHAccountExtractDetail achDetail) {
-            boolean success = super.processACHBatchDetail(achDetail);
-            if (success) {
+        protected String processACHBatchDetail(PayeeACHAccountExtractDetail achDetail) {
+            String failureMessage = super.processACHBatchDetail(achDetail);
+            if (ObjectUtils.isNull(failureMessage) || StringUtils.isBlank(failureMessage)) {
                 successfulDetails.add(achDetail);
             } else {
                 rowResults.incrementNumBadRows();
             }
-            return success;
+            return failureMessage;
         }
         
         @Override
-        protected boolean addACHAccount(Person payee, PayeeACHAccountExtractDetail achDetail, String payeeType) {
-            boolean processingResults = super.addACHAccount(payee, achDetail, payeeType);
+        protected String addACHAccount(Person payee, PayeeACHAccountExtractDetail achDetail, String payeeType) {
+            String processingResults = super.addACHAccount(payee, achDetail, payeeType);
             if (PayeeIdTypeCodes.EMPLOYEE.equals(payeeType)) {
                 rowResults.getEmployeeRowResults().incrementNumNewRows();
             } else if (PayeeIdTypeCodes.ENTITY.equals(payeeType)) {
@@ -602,8 +607,8 @@ public class PayeeACHAccountExtractServiceImplTest {
         }
         
         @Override
-        protected boolean updateACHAccountIfNecessary(Person payee, PayeeACHAccountExtractDetail achDetail, PayeeACHAccount achAccount) {
-            boolean processingResults = super.updateACHAccountIfNecessary(payee, achDetail, achAccount);
+        protected String updateACHAccountIfNecessary(Person payee, PayeeACHAccountExtractDetail achDetail, PayeeACHAccount achAccount) {
+            String processingResults = super.updateACHAccountIfNecessary(payee, achDetail, achAccount);
             if (PayeeIdTypeCodes.EMPLOYEE.equals(achAccount.getPayeeIdentifierTypeCode())) {
                 rowResults.getEmployeeRowResults().incrementNumExistingRows();
             } else if (PayeeIdTypeCodes.ENTITY.equals(achAccount.getPayeeIdentifierTypeCode())) {

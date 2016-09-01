@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,49 +79,62 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
     private AchService achService;
     private AchBankService achBankService;
 
-    private int numFailedRows = 0;
+    private Map<String, List<String>> partialProcessingSummary;
 
     // Portions of this method are based on code and logic from CustomerLoadServiceImpl.
     @Transactional
     @Override
     public boolean processACHBatchDetails() {
-        LOG.info("Beginning processing of ACH input files");
+        LOG.info("processACHBatchDetails: Beginning processing of ACH input files");
         
         int numSuccess = 0;
         int numPartial = 0;
         int numFail = 0;
+        partialProcessingSummary = new HashMap<String, List<String>>();
         
         Map<String,BatchInputFileType> fileNamesToLoad = getListOfFilesToProcess();
-        LOG.info("Found " + fileNamesToLoad.size() + " file(s) to process.");
+        LOG.info("processACHBatchDetails: Found " + fileNamesToLoad.size() + " file(s) to process.");
         
         List<String> processedFiles = new ArrayList<String>();
         for (String inputFileName : fileNamesToLoad.keySet()) {
             
-            LOG.info("Beginning processing of filename: " + inputFileName);
+            LOG.info("processACHBatchDetails: Beginning processing of filename: " + inputFileName);
             processedFiles.add(inputFileName);
             
             try {
-                int numFailedRows = loadACHBatchDetailFile(inputFileName, fileNamesToLoad.get(inputFileName));
-                if (numFailedRows == NO_FAILED_ROWS) {
-                    LOG.info("Successfully loaded ACH input file");
+                List<String> errorList = new ArrayList();
+                errorList = loadACHBatchDetailFile(inputFileName, fileNamesToLoad.get(inputFileName));
+                if (errorList.isEmpty()) {
+                    LOG.info("processACHBatchDetails: Successfully loaded ACH input file");
                     numSuccess++;
                 } else {
-                    LOG.warn("ACH input file contained "+ Integer.toString(numFailedRows) + " rows that could not be processed");
+                    LOG.warn("processACHBatchDetails: ACH input file contained "+ Integer.toString(errorList.size()) + " rows that could not be processed.");
+                    partialProcessingSummary.put(inputFileName, errorList);
                     numPartial++;
                 }
             } catch (Exception e) {
-                LOG.error("Failed to load ACH input file", e);
+                LOG.error("processACHBatchDetails: ", e);
                 numFail++;
             }
         }
         
         removeDoneFiles(processedFiles);
         
-        LOG.info("==== Summary of Payee ACH Account Extract ====");
-        LOG.info("Files loaded successfully: " + Integer.toString(numSuccess));
-        LOG.info("Files loaded with one or more failed rows: " + Integer.toString(numPartial));
-        LOG.info("Files with errors: " + Integer.toString(numFail));
-        LOG.info("==== End Summary ====");
+        LOG.info("processACHBatchDetails: ==== Summary of Payee ACH Account Extract ====");
+        LOG.info("processACHBatchDetails: Files loaded successfully: " + Integer.toString(numSuccess));
+        LOG.info("processACHBatchDetails: Files loaded with one or more failed rows: " + Integer.toString(numPartial));
+        if (!partialProcessingSummary.isEmpty()) {
+            for (String failingFileName : partialProcessingSummary.keySet()) {
+                ArrayList<String> errorsEncountered = (ArrayList) partialProcessingSummary.get(failingFileName);
+                LOG.info("processACHBatchDetails: ACH input file contained "+ errorsEncountered.size() + " rows that could not be processed.");
+                for (Iterator iterator = errorsEncountered.iterator(); iterator.hasNext();) {
+                    String dataError = (String) iterator.next();
+                    LOG.info("processACHBatchDetails: " + dataError);
+                }
+            }
+        }
+        LOG.info("processACHBatchDetails: Files with errors: " + Integer.toString(numFail));
+        LOG.info("processACHBatchDetails: ==== End Summary ====");
         
         // For now, return true even if files or rows did not load successfully. Functionals will address the failed rows/files accordingly.
         return true;
@@ -160,49 +175,50 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
      * Processes a single ACH input file.
      */
     // Portions of this method are based on the code and logic from CustomerLoadServiceImpl.loadFile
-    protected int loadACHBatchDetailFile(String inputFileName, BatchInputFileType batchInputFileType) {
-        int result = numFailedRows = 0;
+    protected List<String> loadACHBatchDetailFile(String inputFileName, BatchInputFileType batchInputFileType) {
+        List<String>failedRowsErrors = new ArrayList<String>();
         
         byte[] fileByteContent = safelyLoadFileBytes(inputFileName);
         
-        LOG.info("Attempting to parse the file.");
+        LOG.info("loadACHBatchDetailFile: Attempting to parse the file.");
         
         Object parsedObject = null;
         try {
             parsedObject = batchInputFileService.parse(batchInputFileType, fileByteContent);
         } catch (ParseException e) {
-            String errorMessage = "Error parsing batch file: " + e.getMessage();
+            String errorMessage = "loadACHBatchDetailFile: Error parsing batch file: " + e.getMessage();
             LOG.error(errorMessage, e);
             throw new RuntimeException(errorMessage);
         }
         
         if (!(parsedObject instanceof List)) {
-            String errorMessage = "Parsed file was not of the expected type.  Expected [" + List.class + "] but got [" + parsedObject.getClass() + "].";
+            String errorMessage = "loadACHBatchDetailFile: Parsed file was not of the expected type.  Expected [" + List.class + "] but got [" + parsedObject.getClass() + "].";
             criticalError(errorMessage);
         }
-        
-        @SuppressWarnings("unchecked")
+
         List<PayeeACHAccountExtractDetail> achDetails = (List<PayeeACHAccountExtractDetail>) parsedObject;
         
         for (PayeeACHAccountExtractDetail achDetail : achDetails) {
-            if (!processACHBatchDetail(achDetail)) {
-                numFailedRows++;
+            String error = processACHBatchDetail(achDetail);
+            if (ObjectUtils.isNotNull(error)) {
+                failedRowsErrors.add(error);
             }
         }
         
-        return numFailedRows;
+        return failedRowsErrors;
     }
 
     /**
      * Processes a single ACH batch detail, and routes a Payee ACH Account maintenance document accordingly.
      */
-    protected boolean processACHBatchDetail(PayeeACHAccountExtractDetail achDetail) {
-        LOG.info("Starting processACHBatchDetail for: " +achDetail.getLogData());
-
+    protected String processACHBatchDetail(PayeeACHAccountExtractDetail achDetail) {
+        LOG.info("processACHBatchDetail: Starting processACHBatchDetail for: " +achDetail.getLogData());
+        String processingError = null;
         Person payee = personService.getPersonByPrincipalName(achDetail.getNetID());
 
-        if (!validateACHBatchDetail(achDetail, payee)) {
-            return false;
+        processingError = validateACHBatchDetail(achDetail, payee);
+        if (ObjectUtils.isNotNull(processingError)) {
+            return processingError;
         }
         
         // Check for existing ACH accounts.
@@ -213,35 +229,39 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         
         // Add or update Entity ID account.
         if (ObjectUtils.isNull(entityAccount)) {
-            if (addACHAccount(payee, achDetail, PayeeIdTypeCodes.ENTITY)) {
-                LOG.info("Created new ACH Account of Entity type for payee " + payee.getPrincipalName());
+            processingError = addACHAccount(payee, achDetail, PayeeIdTypeCodes.ENTITY);
+            if (ObjectUtils.isNull(processingError)) {
+                LOG.info("processACHBatchDetail: Created new ACH Account of Entity type for payee " + payee.getPrincipalName());
             } else {
-                return false;
+                return processingError;
             }
         } else {
-            if (updateACHAccountIfNecessary(payee, achDetail, entityAccount)) {
-                LOG.info("Any necessary update processing performed to ACH Account of Entity type for payee " + payee.getPrincipalName());
+            processingError = updateACHAccountIfNecessary(payee, achDetail, entityAccount);
+            if (ObjectUtils.isNull(processingError)) {
+                LOG.info("processACHBatchDetail: Any necessary update processing performed to ACH Account of Entity type for payee " + payee.getPrincipalName());
             } else {
-                return false;
+                return processingError;
             }
         }
         
         // Add or update Employee ID account.
         if (ObjectUtils.isNull(employeeAccount)) {
-            if (addACHAccount(payee, achDetail, PayeeIdTypeCodes.EMPLOYEE)) {
-                LOG.info("Created new ACH Account of Employee type for payee " + payee.getPrincipalName());
+            processingError = addACHAccount(payee, achDetail, PayeeIdTypeCodes.EMPLOYEE);
+            if (ObjectUtils.isNull(processingError)) {
+                LOG.info("processACHBatchDetail: Created new ACH Account of Employee type for payee " + payee.getPrincipalName());
             } else {
-                return false;
+                return processingError;
             }
         } else {
-            if (updateACHAccountIfNecessary(payee, achDetail, employeeAccount)) {
-                LOG.info("Any necessary update processing performed to ACH Account of Employee type for payee " + payee.getPrincipalName());
+            processingError = updateACHAccountIfNecessary(payee, achDetail, employeeAccount);
+            if (ObjectUtils.isNull(processingError)) {
+                LOG.info("processACHBatchDetail: Any necessary update processing performed to ACH Account of Employee type for payee " + payee.getPrincipalName());
             } else {
-                return false;
+                return processingError;
             }
         }
  
-        return true;
+        return null;
     }
 
     /**
@@ -252,8 +272,8 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
      * @param payee The object representing the payee matching the batch detail's netID; may be null.
      * @return True if the ACH batch detail passed validation, false otherwise.
      */
-    protected boolean validateACHBatchDetail(PayeeACHAccountExtractDetail achDetail, Person payee) {
-        final int BUILDER_START_SIZE = 100;
+    protected String validateACHBatchDetail(PayeeACHAccountExtractDetail achDetail, Person payee) {
+        final int BUILDER_START_SIZE = 200;
         StringBuilder failureMessage = new StringBuilder(BUILDER_START_SIZE);
         int listIndex = 1;
         
@@ -268,6 +288,10 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
                 appendFailurePrefix(failureMessage, achDetail.getNetID(), listIndex++);
                 failureMessage.append(" Payee has an employee ID of \"").append(achDetail.getEmployeeID()).append(
                         "\" in input file, but has an employee ID of \"").append(payee.getEmployeeId()).append("\" in KFS. ");
+            }
+            if (StringUtils.isBlank(payee.getEmailAddressUnmasked())) {
+                appendFailurePrefix(failureMessage, achDetail.getNetID(), listIndex++);
+                failureMessage.append(" Payee has no email address defined in KFS. No notification emails will be sent for this user.");
             }
         }
 
@@ -314,13 +338,13 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
             appendFailurePrefix(failureMessage, achDetail.getNetID(), listIndex++);
             failureMessage.append(" Account is not a checking or savings account. ");
         }
-        
+
         // Log the message as a warning if non-blank, and also treat non-blank messages as failures; otherwise return success.
         if (failureMessage.length() > 0) {
-            LOG.warn(failureMessage.toString());
-            return false;
+            LOG.warn("validateACHBatchDetail:" + failureMessage.toString());
+            return failureMessage.toString();
         }
-        return true;
+        return null;
     }
 
     /**
@@ -344,29 +368,32 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
     /**
      * Creates and routes a PAAT document to create a new ACH Account of the given payee type.
      */
-    protected boolean addACHAccount(Person payee, PayeeACHAccountExtractDetail achDetail, String payeeType) {
+    protected String addACHAccount(Person payee, PayeeACHAccountExtractDetail achDetail, String payeeType) {
         // Create and route a new PAAT (Payee ACH Account Maintenance) document.
+        String processingError = null;
         try {
             // Create document and set description.
             MaintenanceDocument paatDocument = (MaintenanceDocument) documentService.getNewDocument(CUPdpConstants.PAYEE_ACH_ACCOUNT_EXTRACT_MAINT_DOC_TYPE);
             paatDocument.getDocumentHeader().setDocumentDescription(getDocumentDescription(payee, PayeeIdTypeCodes.ENTITY.equals(payeeType), true));
-            
+
             // Configure as "New" maintenance and get maintained object.
             PayeeACHAccountMaintainableImpl maintainable = (PayeeACHAccountMaintainableImpl) paatDocument.getNewMaintainableObject();
             maintainable.setMaintenanceAction(KFSConstants.MAINTENANCE_NEW_ACTION);
             PayeeACHAccount achAccount = (PayeeACHAccount) maintainable.getDataObject();
-            
+
             // Setup payee ID and type.
             if (PayeeIdTypeCodes.ENTITY.equals(payeeType)) {
                 achAccount.setPayeeIdNumber(payee.getEntityId());
             } else if (PayeeIdTypeCodes.EMPLOYEE.equals(payeeType)) {
                 achAccount.setPayeeIdNumber(payee.getEmployeeId());
             } else {
-                LOG.info("Unexpected payee ID type for automated Payee ACH Account creation: '" + payeeType + "'  while attempting to addACHAccount for: " + achDetail.getLogData());
-                return false;
+                processingError = new String("addACHAccount: " + achDetail.getLogData() +
+                        ": Unexpected payee ID type '" + payeeType + "' for automated Payee during ACH Account creation attempt.");
+                LOG.error(processingError);
+                return processingError;
             }
             achAccount.setPayeeIdentifierTypeCode(payeeType);
-            
+
             // Setup other fields.
             achAccount.setAchAccountGeneratedIdentifier(
                     new KualiInteger(sequenceAccessorService.getNextAvailableSequenceNumber(PdpConstants.ACH_ACCOUNT_IDENTIFIER_SEQUENCE_NAME)));
@@ -381,22 +408,23 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
                 achAccount.setPayeeEmailAddress(payee.getEmailAddressUnmasked());
             }
             achAccount.setActive(true);
-            
+
             // Add a note indicating that this document was generated by a batch process.
             addNote(paatDocument, parameterService.getParameterValueAsString(
                     PayeeACHAccountExtractStep.class, CUPdpParameterConstants.GENERATED_PAYEE_ACH_ACCOUNT_DOC_NOTE_TEXT));
-            
+
             // Route the document and send notifications.
             paatDocument = (MaintenanceDocument) documentService.routeDocument(paatDocument, KFSConstants.EMPTY_STRING, null);
             sendPayeeACHAccountAddOrUpdateEmail((PayeeACHAccount) paatDocument.getNewMaintainableObject().getDataObject(), payee,
                     getPayeeACHAccountAddOrUpdateEmailSubject(true), getUnresolvedPayeeACHAccountAddOrUpdateEmailBody(true));
 
-            return true;
+            return processingError;
 
         } catch (Exception e) {
-            LOG.info("addACHAccount STE " + e.getStackTrace() + e.toString());
-            LOG.info(getFailRequestMessage(e));
-            return false;
+            LOG.error("addACHAccount STE " + e.getStackTrace() + e.toString());
+            LOG.error(getFailRequestMessage(e));
+            processingError = new String("addACHAccount: " + achDetail.getLogData() + " STE was generated. " + getFailRequestMessage(e));
+            return processingError;
         }
     }
 
@@ -408,7 +436,7 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
      * This method will indicate that valid processing occurred whenever it is caled until it 
      * is modified in the future to perform actual updates.
      */
-    protected boolean updateACHAccountIfNecessary(Person payee, PayeeACHAccountExtractDetail achDetail, PayeeACHAccount achAccount) {
+    protected String updateACHAccountIfNecessary(Person payee, PayeeACHAccountExtractDetail achDetail, PayeeACHAccount achAccount) {
         StringBuilder processingResults = new StringBuilder();
         processingResults.append("Update functionality NOT implmented yet. Data being checked for possible mismatch. ");
 
@@ -431,8 +459,8 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
                              .append("' matches what is already in KFS; no updates will be made for this entry.");
         }
         processingResults.append(" Update was NOT performed.");
-        LOG.info(processingResults.toString());
-        return true;
+        LOG.info("updateACHAccountIfNecessary: " + processingResults.toString());
+        return processingResults.toString();
     }
 
     private String getFailRequestMessage(Exception e) {
