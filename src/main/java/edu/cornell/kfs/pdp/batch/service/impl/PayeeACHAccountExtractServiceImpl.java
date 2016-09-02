@@ -124,10 +124,11 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         LOG.info("processACHBatchDetails: Files loaded with one or more failed rows: " + numPartial);
         if (!partialProcessingSummary.isEmpty()) {
             for (String failingFileName : partialProcessingSummary.keySet()) {
-                List<String> errorsEncountered = partialProcessingSummary.get(failingFileName);
+                ArrayList<String> errorsEncountered = (ArrayList)partialProcessingSummary.get(failingFileName);
                 LOG.info("processACHBatchDetails: ACH input file contained "+ errorsEncountered.size() + " rows that could not be processed.");
-                for (String dataError: errorsEncountered) {
-                    LOG.info("processACHBatchDetails: " + errorsEncountered);
+                for (Iterator iterator = errorsEncountered.iterator(); iterator.hasNext();) {
+                    String dataError = (String) iterator.next();
+                    LOG.info("processACHBatchDetails: " + dataError);
                 }
             }
         }
@@ -436,7 +437,8 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
      */
     protected String updateACHAccountIfNecessary(Person payee, PayeeACHAccountExtractDetail achDetail, PayeeACHAccount achAccount) {
         StringBuilder processingResults = new StringBuilder();
-        processingResults.append("Update functionality NOT implmented yet. Data being checked for possible mismatch. ");
+        processingResults.append("Update functionality NOT implemented yet. Payee \"")
+        .append(achDetail.getNetID()).append("\" data being checked for possible mismatch. ");
 
         if (!StringUtils.equals(achDetail.getBankRoutingNumber(), achAccount.getBankRoutingNumber())
                 || !StringUtils.equals(achDetail.getBankAccountNumber(), achAccount.getBankAccountNumber())) {
@@ -444,20 +446,16 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
              * For a future enhancement, we will modify this method to actually update the Payee ACH Account
              * via a maintenance document, and possibly use more fields for change comparison.
              */
-            processingResults.append(" Account information from input file for payee ")
-                             .append(achDetail.getNetID())
-                             .append(" and payee type '")
-                             .append(achAccount.getPayeeIdentifierTypeCode())
-                             .append("' does not match what is in KFS, but will be left as-is.");
+            processingResults.append(" Account information from input file for payee type '")
+            .append(achAccount.getPayeeIdentifierTypeCode())
+            .append("' does not match what is in KFS, but will be left as-is.");
         } else {
-            processingResults.append(" Input file's account information for payee ")
-                             .append(achDetail.getNetID())
-                             .append(" of type '")
-                             .append(achAccount.getPayeeIdentifierTypeCode())
-                             .append("' matches what is already in KFS; no updates will be made for this entry.");
+            processingResults.append(" Input file's account information for payee of type '")
+            .append(achAccount.getPayeeIdentifierTypeCode())
+            .append("' matches what is already in KFS; no updates will be made for this entry.");
         }
         processingResults.append(" Update was NOT performed.");
-        LOG.info("updateACHAccountIfNecessary: " + processingResults.toString());
+        LOG.warn("updateACHAccountIfNecessary: " + processingResults.toString());
         return processingResults.toString();
     }
 

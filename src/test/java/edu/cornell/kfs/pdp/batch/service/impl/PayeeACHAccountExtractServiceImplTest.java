@@ -141,7 +141,7 @@ public class PayeeACHAccountExtractServiceImplTest {
     public void testLoadValidFile() throws Exception {
         // Load only the "good" file, which we expect to completely succeed.
         List<PayeeACHAccountExtractDetail> expectedSuccessfulDetails = Arrays.asList(
-                getExpectedExtractDetailForTestAccount(), getExpectedExtractDetailForAlternateTestAccount());
+                getExpectedExtractDetailForTestAccount());
         
         copyInputFilesAndGenerateDoneFiles(GOOD_LINES_FILE);
         payeeACHAccountExtractService.processACHBatchDetails();
@@ -173,12 +173,10 @@ public class PayeeACHAccountExtractServiceImplTest {
     @Test
     public void testLoadFileWithSomeInvalidRows() throws Exception {
         // Load only the some-good-and-bad-rows file, which we expect to load but to have some of its data lines rejected (due to validation problems).
-        List<PayeeACHAccountExtractDetail> expectedSuccessfulDetails = Arrays.asList(
-                getExpectedExtractDetailForAlternateTestAccount(), getExpectedExtractDetailForAlternateTestAccount(), getExpectedExtractDetailForAlternateTestAccount(), getExpectedExtractDetailForAlternateTestAccount());
         copyInputFilesAndGenerateDoneFiles(MIX_GOOD_BAD_LINES_FILE);
         payeeACHAccountExtractService.processACHBatchDetails();
         assertFileAndRowLoadingResultsAreCorrect(
-                new AchFileResults(0, 1, 0), getExpectedResultsForMixedGoodBadLinesFile(), expectedSuccessfulDetails);
+                new AchFileResults(0, 1, 0), getExpectedResultsForMixedGoodBadLinesFile(), Collections.<PayeeACHAccountExtractDetail>emptyList());
         assertDoneFilesWereDeleted(MIX_GOOD_BAD_LINES_FILE);
     }
 
@@ -186,14 +184,10 @@ public class PayeeACHAccountExtractServiceImplTest {
     public void testLoadMultipleFiles() throws Exception {
         // Load the badly-formatted file, the all-invalid-data file, and the some-invalid-data file.
         AchRowResults expectedRowResults = AchRowResults.createSummarizedResults(getExpectedResultsForBadLinesFile(), getExpectedResultsForMixedGoodBadLinesFile());
-
-        List<PayeeACHAccountExtractDetail> expectedSuccessfulDetails = Arrays.asList(
-                getExpectedExtractDetailForAlternateTestAccount(), getExpectedExtractDetailForAlternateTestAccount(), getExpectedExtractDetailForAlternateTestAccount(), getExpectedExtractDetailForAlternateTestAccount());
-
         copyInputFilesAndGenerateDoneFiles(BAD_HEADERS_FILE, BAD_LINES_FILE, MIX_GOOD_BAD_LINES_FILE);
         payeeACHAccountExtractService.processACHBatchDetails();
         assertFileAndRowLoadingResultsAreCorrect(
-                new AchFileResults(0, 2, 1), expectedRowResults, expectedSuccessfulDetails);
+                new AchFileResults(0, 2, 1), expectedRowResults, Collections.<PayeeACHAccountExtractDetail>emptyList());
         assertDoneFilesWereDeleted(BAD_HEADERS_FILE);
         assertDoneFilesWereDeleted(BAD_LINES_FILE);
         assertDoneFilesWereDeleted(MIX_GOOD_BAD_LINES_FILE);
@@ -296,15 +290,15 @@ public class PayeeACHAccountExtractServiceImplTest {
     }
 
     private AchRowResults getExpectedResultsForGoodFile() {
-        // All file lines should succeed, resulting in 1 new employee account, 2 new entity accounts, and 1 skipped update to an existing employee account.
+        // File line should succeed, resulting in 1 new employee account and 1 new entity account with no errors.
         return new AchRowResults(
-                new AchSuccessfulRowResults(PayeeIdTypeCodes.EMPLOYEE, 1, 1), new AchSuccessfulRowResults(PayeeIdTypeCodes.ENTITY, 2, 0), 0);
+                new AchSuccessfulRowResults(PayeeIdTypeCodes.EMPLOYEE, 1, 0), new AchSuccessfulRowResults(PayeeIdTypeCodes.ENTITY, 1, 0), 0);
     }
 
     private AchRowResults getExpectedResultsForMixedGoodBadLinesFile() {
         // Ten file lines should fail, and four file lines should succeed
         return new AchRowResults(
-                new AchSuccessfulRowResults(PayeeIdTypeCodes.EMPLOYEE, 0, 4), new AchSuccessfulRowResults(PayeeIdTypeCodes.ENTITY, 4, 0), 10);
+                new AchSuccessfulRowResults(PayeeIdTypeCodes.EMPLOYEE, 0, 4), new AchSuccessfulRowResults(PayeeIdTypeCodes.ENTITY, 4, 0), 14);
     }
 
     private PayeeACHAccountExtractDetail getExpectedExtractDetailForTestAccount() {
