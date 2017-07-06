@@ -30,6 +30,19 @@ import net.sf.jasperreports.engine.JRParameter;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.kuali.kfs.krad.bo.Attachment;
+import org.kuali.kfs.krad.bo.Note;
+import org.kuali.kfs.krad.bo.PersistableBusinessObject;
+import org.kuali.kfs.krad.datadictionary.AttributeDefinition;
+import org.kuali.kfs.krad.datadictionary.DataDictionary;
+import org.kuali.kfs.krad.datadictionary.DataDictionaryEntry;
+import org.kuali.kfs.krad.datadictionary.DataDictionaryEntryBase;
+import org.kuali.kfs.krad.document.Document;
+import org.kuali.kfs.krad.service.AttachmentService;
+import org.kuali.kfs.krad.service.DataDictionaryService;
+import org.kuali.kfs.krad.util.ErrorMessage;
+import org.kuali.kfs.krad.util.MessageMap;
+import org.kuali.kfs.krad.util.ObjectUtils;
 import org.kuali.kfs.module.purap.document.PurchaseOrderDocument;
 import org.kuali.kfs.sys.KFSConstants;
 import org.kuali.kfs.sys.KFSConstants.ReportGeneration;
@@ -43,21 +56,6 @@ import org.kuali.rice.core.api.datetime.DateTimeService;
 import org.kuali.rice.core.api.mo.common.active.MutableInactivatable;
 import org.kuali.rice.kim.api.identity.Person;
 import org.kuali.rice.kim.api.identity.PersonService;
-import org.kuali.kfs.kns.util.KNSConstants;
-import org.kuali.kfs.krad.bo.Attachment;
-import org.kuali.kfs.krad.bo.Note;
-import org.kuali.kfs.krad.bo.PersistableBusinessObject;
-import org.kuali.kfs.krad.datadictionary.AttributeDefinition;
-import org.kuali.kfs.krad.datadictionary.DataDictionary;
-import org.kuali.kfs.krad.datadictionary.DataDictionaryEntry;
-import org.kuali.kfs.krad.datadictionary.DataDictionaryEntryBase;
-import org.kuali.kfs.krad.document.Document;
-import org.kuali.kfs.krad.service.AttachmentService;
-import org.kuali.kfs.krad.service.DataDictionaryService;
-import org.kuali.kfs.krad.util.ErrorMessage;
-import org.kuali.kfs.krad.util.KRADConstants;
-import org.kuali.kfs.krad.util.MessageMap;
-import org.kuali.kfs.krad.util.ObjectUtils;
 
 import com.rsmart.kuali.kfs.sys.KFSKeyConstants;
 import com.rsmart.kuali.kfs.sys.batch.service.BatchFeedHelperService;
@@ -169,6 +167,58 @@ public class BatchFeedHelperServiceImpl implements BatchFeedHelperService {
         }
 
         return auditMessage;
+    }
+
+    public String getAuditMessageUsingStreams(String successfulErrorKey, String documentNumber, MessageMap errorMap) {
+        String auditMessage = StringUtils.EMPTY;
+        if (errorMap.hasErrors()) {
+            auditMessage = errorMap.getAllPropertiesWithErrors()
+                    .stream()
+                    .flatMap((errorProperty) -> errorMap.getMessages(errorProperty).stream())
+                    .map((errorMessage) -> buildErrorMessageText(errorMessage))
+                    .collect(() -> new StringBuilder(),
+                            (builder, message) -> builder.append(message),
+                            (builder1, builder2) -> builder1.append(builder2))
+                    .toString();
+        }
+        
+        return appendPrefixOrReplaceWithSuccessMessage(successfulErrorKey, documentNumber, auditMessage);
+    }
+
+    public String getAuditMessageUsingStreamsAndMethodRefs(String successfulErrorKey, String documentNumber, MessageMap errorMap) {
+        String auditMessage = StringUtils.EMPTY;
+        if (errorMap.hasErrors()) {
+            auditMessage = errorMap.getAllPropertiesWithErrors()
+                    .stream()
+                    .flatMap((errorProperty) -> errorMap.getMessages(errorProperty).stream())
+                    .map(this::buildErrorMessageText)
+                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                    .toString();
+        }
+        
+        return appendPrefixOrReplaceWithSuccessMessage(successfulErrorKey, documentNumber, auditMessage);
+    }
+
+    protected String buildErrorMessageText(ErrorMessage errorMessage) {
+        String errorText = kualiConfigurationService.getPropertyValueAsString(((ErrorMessage) errorMessage).getErrorKey());
+        if (StringUtils.isBlank(errorText)) {
+            throw new RuntimeException("Cannot find message for error key: " + ((ErrorMessage) errorMessage).getErrorKey());
+        } else {
+            Object[] arguments = (Object[]) ((ErrorMessage) errorMessage).getMessageParameters();
+            if (arguments != null && arguments.length != 0) {
+                errorText = MessageFormat.format(errorText, arguments);
+            }
+        }
+        return errorText + KFSConstants.BLANK_SPACE;
+    }
+
+    protected String appendPrefixOrReplaceWithSuccessMessage(String successfulErrorKey, String documentNumber, String auditMessage) {
+        if (StringUtils.isNotBlank(auditMessage)) {
+            return com.rsmart.kuali.kfs.sys.KFSConstants.AUDIT_REPORT_ERROR_PREFIX + auditMessage;
+        } else {
+            String successMessage = kualiConfigurationService.getPropertyValueAsString(successfulErrorKey);
+            return MessageFormat.format(successMessage, documentNumber);
+        }
     }
 
     /**
