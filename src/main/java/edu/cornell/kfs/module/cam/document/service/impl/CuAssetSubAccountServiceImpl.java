@@ -1,13 +1,16 @@
 package edu.cornell.kfs.module.cam.document.service.impl;
 
+import java.util.Arrays;
 import java.util.regex.PatternSyntaxException;
+
 import org.apache.commons.lang.StringUtils;
-import org.kuali.kfs.module.cam.businessobject.Asset;
-import org.kuali.kfs.module.cam.businessobject.AssetGlpeSourceDetail;
-import org.kuali.kfs.krad.util.ObjectUtils;
 import org.kuali.kfs.coreservice.api.parameter.EvaluationOperator;
 import org.kuali.kfs.coreservice.api.parameter.Parameter;
 import org.kuali.kfs.coreservice.framework.parameter.ParameterService;
+import org.kuali.kfs.krad.util.ObjectUtils;
+import org.kuali.kfs.module.cam.businessobject.Asset;
+import org.kuali.kfs.module.cam.businessobject.AssetGlpeSourceDetail;
+
 import edu.cornell.kfs.module.cam.CuCamsConstants;
 import edu.cornell.kfs.module.cam.document.service.CuAssetSubAccountService;
 
@@ -69,6 +72,20 @@ public class CuAssetSubAccountServiceImpl implements CuAssetSubAccountService {
             }
         }
         return false;
+    }
+
+    protected boolean accountMatchesAtLeastOnePatternUsingStreams(String accountNumber, String... patterns) {
+        if (patterns == null || patterns.length == 0) {
+            return false;
+        }
+        return Arrays.stream(patterns)
+                .map((pattern) -> formatPatternString(pattern))
+                .anyMatch((pattern) -> accountNumber.matches(pattern));
+    }
+
+    protected String formatPatternString(String pattern) {
+        String patternWithAdjustedWildcards = pattern.replace("*", ".*");
+        return String.format("^%s$", patternWithAdjustedWildcards);
     }
 
     public void setParameterService(ParameterService parameterService) {
