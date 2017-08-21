@@ -631,6 +631,11 @@ public class PayeeACHAccountExtractServiceImplTest {
             return super.getResolvedEmailBody(achAccount, emailBody);
         }
         
+        @Override
+        protected String getValidationErrorMessage() {
+            return super.getValidationErrorMessageUsingStreams();
+        }
+        
         public AchFileResults getFileResults() {
             return fileResults;
         }

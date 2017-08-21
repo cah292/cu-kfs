@@ -469,7 +469,7 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
         }
     }
 
-    private String getValidationErrorMessage() {
+    protected String getValidationErrorMessage() {
         StringBuilder validationError = new StringBuilder();
         for (String errorProperty : GlobalVariables.getMessageMap().getAllPropertiesWithErrors()) {
             for (Object errorMessage : GlobalVariables.getMessageMap().getMessages(errorProperty)) {
@@ -486,6 +486,29 @@ public class PayeeACHAccountExtractServiceImpl implements PayeeACHAccountExtract
                 validationError.append(errorMsg + KFSConstants.NEWLINE);;
             }
         }
+        return validationError.toString();
+    }
+
+    protected String getValidationErrorMessageUsingStreams() {
+        StringBuilder validationError = new StringBuilder();
+        
+        GlobalVariables.getMessageMap().getAllPropertiesAndErrors()
+                .stream()
+                .flatMap((errorEntry) -> errorEntry.getValue().stream())
+                .forEach((errorMessage) -> {
+                    String errorMsg = configurationService.getPropertyValueAsString(errorMessage.getErrorKey());
+                    if (errorMsg == null) {
+                        throw new RuntimeException("Cannot find message for error key: " + errorMessage.getErrorKey());
+                    }
+                    else {
+                        Object[] arguments = errorMessage.getMessageParameters();
+                        if (arguments != null && arguments.length != 0) {
+                            errorMsg = MessageFormat.format(errorMsg, arguments);
+                        }
+                    }
+                    validationError.append(errorMsg + KFSConstants.NEWLINE);
+                });
+        
         return validationError.toString();
     }
 
