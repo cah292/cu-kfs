@@ -85,7 +85,7 @@ public class CuAssetSubAccountServiceImpl implements CuAssetSubAccountService {
 
     protected String formatPatternString(String pattern) {
         String patternWithAdjustedWildcards = pattern.replace("*", ".*");
-        return String.format("^%s$", patternWithAdjustedWildcards);
+        return "^" + patternWithAdjustedWildcards + "$";
     }
 
     public void setParameterService(ParameterService parameterService) {

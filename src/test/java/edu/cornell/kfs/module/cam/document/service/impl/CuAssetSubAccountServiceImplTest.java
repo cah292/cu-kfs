@@ -21,6 +21,7 @@ import org.kuali.kfs.coreservice.api.parameter.Parameter;
 import org.kuali.kfs.coreservice.api.parameter.ParameterType;
 import org.kuali.kfs.coreservice.framework.parameter.ParameterService;
 import org.kuali.kfs.coreservice.impl.parameter.ParameterServiceImpl;
+
 import edu.cornell.kfs.module.cam.CuCamsConstants;
 
 public class CuAssetSubAccountServiceImplTest {
@@ -211,6 +212,11 @@ public class CuAssetSubAccountServiceImplTest {
         @Override
         public boolean shouldClearSubAccount(AssetGlpeSourceDetail postable) {
             return super.shouldClearSubAccount(postable);
+        }
+        
+        @Override
+        protected boolean accountMatchesAtLeastOnePattern(String accountNumber, String... patterns) {
+            return super.accountMatchesAtLeastOnePatternUsingStreams(accountNumber, patterns);
         }
     }
 }
