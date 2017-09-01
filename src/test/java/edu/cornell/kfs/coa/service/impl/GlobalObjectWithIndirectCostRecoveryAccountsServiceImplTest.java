@@ -78,7 +78,7 @@ public class GlobalObjectWithIndirectCostRecoveryAccountsServiceImplTest {
 				doesListContainIcr(accountGlobalDetail.getAccount().getIndirectCostRecoveryAccounts(), IndirectCostRecoveryAccountFixture.ICR_3333333_100_PERCENT_INACTIVE.getIndirectCostRecoveryAccountChange()));
 	}
 
-	private boolean doesListContainIcr(List<IndirectCostRecoveryAccount> list, IndirectCostRecoveryAccount icrAccount) {
+	private boolean doesListContainIcr_Old(List<IndirectCostRecoveryAccount> list, IndirectCostRecoveryAccount icrAccount) {
 		for (IndirectCostRecoveryAccount icr : list) {
 			if (icr.getIndirectCostRecoveryFinCoaCode().equalsIgnoreCase(icrAccount.getIndirectCostRecoveryFinCoaCode())
 					&& icr.getIndirectCostRecoveryAccountNumber().equalsIgnoreCase(icrAccount.getIndirectCostRecoveryAccountNumber())
@@ -89,5 +89,17 @@ public class GlobalObjectWithIndirectCostRecoveryAccountsServiceImplTest {
 		}
 		return false;
 	}
+
+    private boolean doesListContainIcr(List<IndirectCostRecoveryAccount> list, IndirectCostRecoveryAccount icrAccount) {
+        return list.stream()
+                .anyMatch((accountFromList) -> icrAccountsMatch(accountFromList, icrAccount));
+    }
+
+    private boolean icrAccountsMatch(IndirectCostRecoveryAccount firstAccount, IndirectCostRecoveryAccount secondAccount) {
+        return firstAccount.getIndirectCostRecoveryFinCoaCode().equalsIgnoreCase(secondAccount.getIndirectCostRecoveryFinCoaCode())
+                && firstAccount.getIndirectCostRecoveryAccountNumber().equalsIgnoreCase(secondAccount.getIndirectCostRecoveryAccountNumber())
+                && firstAccount.getAccountLinePercent().compareTo(secondAccount.getAccountLinePercent()) == 0
+                && firstAccount.isActive() == secondAccount.isActive();
+    }
 
 }
