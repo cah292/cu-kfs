@@ -65,7 +65,7 @@ public class AccountReversionServiceImplTest extends KualiTestBase {
     	List<ReversionCategory> results = accountReversionService.getCategoryList();
     	assertTrue("categories should not be empty", results.size() > 0);
     	
-    	boolean foundGoodMatch = false;
+    	/*boolean foundGoodMatch = false;
     	for (ReversionCategory reversionCategory : results) {
     		if (reversionCategory.getReversionCategoryCode().equals(goodReversionCategory.getReversionCategoryCode())) {
     			foundGoodMatch = true;
@@ -75,10 +75,32 @@ public class AccountReversionServiceImplTest extends KualiTestBase {
     		} else if (reversionCategory.getReversionCategoryCode().equals(badReversionCategory.getReversionCategoryCode())) {
     			fail("should not have found bogus match");
     		}
-    	}
+    	}*/
+    	
+    	boolean foundGoodMatch = results.stream()
+    	        .filter((reversionCategory) -> failIfBadOtherwiseCheckIfGood(reversionCategory, goodReversionCategory, badReversionCategory))
+    	        .peek((reversionCategory) -> assertReversionCategoryHasCorrectData(reversionCategory, goodReversionCategory))
+    	        .findAny()
+    	        .isPresent();
     	
     	assertTrue("should find a good match", foundGoodMatch);
     	
+    }
+    
+    private boolean failIfBadOtherwiseCheckIfGood(
+            ReversionCategory reversionCategory, ReversionCategory goodReversionCategory, ReversionCategory badReversionCategory) {
+        if (reversionCategory.getReversionCategoryCode().equals(goodReversionCategory.getReversionCategoryCode())) {
+            return true;
+        } else if (reversionCategory.getReversionCategoryCode().equals(badReversionCategory.getReversionCategoryCode())) {
+            fail("should not have found bogus match");
+        }
+        return false;
+    }
+    
+    private void assertReversionCategoryHasCorrectData(ReversionCategory reversionCategory, ReversionCategory goodReversionCategory) {
+        assertEquals(goodReversionCategory.getReversionCategoryName(), reversionCategory.getReversionCategoryName());
+        assertEquals(goodReversionCategory.getReversionSortCode(), reversionCategory.getReversionSortCode());
+        assertEquals(goodReversionCategory.isActive(), reversionCategory.isActive());
     }
     
     public void testIsCategoryActive() {
