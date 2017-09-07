@@ -95,26 +95,6 @@
   			</list>
   		</property>
   	</bean>
-  	
-  	<bean id="Requisition-itemConsideredEnteredCompositeValidation-parentBean" parent="CompositeValidation" scope="prototype" abstract="true"> 								
-        <property name="quitOnFail" value="false" />
-        <property name="validations">
-            <list>    
-			  
-                <bean parent="Requisition-newIndividualItemValidation" scope="prototype">
-                    <property name="parameterProperties">
-                        <list>
-                            <bean parent="itemIterationSubjectFieldConversation" />
-                        </list>
-                    </property>
-                </bean>
-				
-                <bean
-	parent="Requisition-itemConsideredEnteredComposite-requiresAccountValidation-needsAccountBranchCompositeValidation"
-	scope="prototype" />
-            </list>
-        </property>
-    </bean>
     
     <bean id="Requisition-saveDocumentValidation" parent="Requisition-saveDocumentValidation-parentBean" scope="prototype" />
   
