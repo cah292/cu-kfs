@@ -327,11 +327,14 @@ abstract class TransactionDetailSummary {
                 String value = parameterValue.substring(equalsSignIndex + 1).toUpperCase();
                 
                 // Create a new Pattern list for the given key if one does not exist.
+                /*
                 List<Pattern> patterns = patternMap.get(key);
                 if (patterns == null) {
                     patterns = new ArrayList<Pattern>();
                     patternMap.put(key, patterns);
                 }
+                */
+                List<Pattern> patterns = patternMap.computeIfAbsent(key, (newKey) -> new ArrayList<>());
                 
                 // Create the Pattern.
                 switch (value.charAt(0)) {
