@@ -12,8 +12,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.kuali.kfs.krad.service.BusinessObjectService;
+import org.kuali.kfs.krad.util.KRADConstants;
+import org.kuali.kfs.krad.util.ObjectUtils;
 import org.kuali.kfs.module.purap.PurapConstants;
 import org.kuali.kfs.module.purap.PurapConstants.PurapDocTypeCodes;
 import org.kuali.kfs.module.purap.businessobject.PaymentRequestItem;
@@ -34,9 +38,6 @@ import org.kuali.kfs.sys.businessobject.GeneralLedgerPendingEntrySequenceHelper;
 import org.kuali.kfs.sys.businessobject.SourceAccountingLine;
 import org.kuali.kfs.sys.context.SpringContext;
 import org.kuali.rice.core.api.util.type.KualiDecimal;
-import org.kuali.kfs.krad.service.BusinessObjectService;
-import org.kuali.kfs.krad.util.KRADConstants;
-import org.kuali.kfs.krad.util.ObjectUtils;
 
 import edu.cornell.kfs.fp.service.CUPaymentMethodGeneralLedgerPendingEntryService;
 import edu.cornell.kfs.module.purap.document.CuPaymentRequestDocument;
@@ -171,7 +172,7 @@ public class CuPurapGeneralLedgerServiceImpl extends PurapGeneralLedgerServiceIm
                         preq,((CuPaymentRequestDocument)preq).getPaymentMethodCode(),preq.getBankCode(), KRADConstants.DOCUMENT_PROPERTY_NAME + "." + "bankCode", preq.getGeneralLedgerPendingEntry(0), false, false, sequenceHelper);
             } else if ( MODIFY_PAYMENT_REQUEST.equals(processType) ) {
                 // upon modify, we need to calculate the deltas here and pass them in so the appropriate adjustments are created
-                KualiDecimal bankOffsetAmount = KualiDecimal.ZERO;
+                /*KualiDecimal bankOffsetAmount = KualiDecimal.ZERO;
                 Map<String,KualiDecimal> changesByChart = new HashMap<String, KualiDecimal>();
                 if (ObjectUtils.isNotNull(summaryAccounts) && !summaryAccounts.isEmpty()) {
                     for ( SummaryAccount a : (List<SummaryAccount>)summaryAccounts ) {
@@ -182,7 +183,17 @@ public class CuPurapGeneralLedgerServiceImpl extends PurapGeneralLedgerServiceIm
                             changesByChart.put( a.getAccount().getChartOfAccountsCode(), changesByChart.get( a.getAccount().getChartOfAccountsCode() ).add( a.getAccount().getAmount() ) );
                         }
                     }
-                }
+                }*/
+                
+                List<SummaryAccount> typedSummaryAccounts = ObjectUtils.isNotNull(summaryAccounts)
+                        ? (List<SummaryAccount>) summaryAccounts : Collections.emptyList();
+                Map<String, KualiDecimal> changesByChart = typedSummaryAccounts.stream()
+                        .collect(Collectors.toMap(
+                                (summaryAccount) -> summaryAccount.getAccount().getChartOfAccountsCode(),
+                                (summaryAccount) -> summaryAccount.getAccount().getAmount(),
+                                KualiDecimal::add));
+                KualiDecimal bankOffsetAmount = changesByChart.values().stream()
+                        .reduce(KualiDecimal.ZERO, KualiDecimal::add);
                 
                 getPaymentMethodGeneralLedgerPendingEntryService().generatePaymentMethodSpecificDocumentGeneralLedgerPendingEntries(
                         preq,((CuPaymentRequestDocument)preq).getPaymentMethodCode(),preq.getBankCode(), KRADConstants.DOCUMENT_PROPERTY_NAME + "." + "bankCode", preq.getGeneralLedgerPendingEntry(0), true, false, sequenceHelper, bankOffsetAmount, changesByChart );
