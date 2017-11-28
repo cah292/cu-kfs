@@ -1,24 +1,27 @@
 package edu.cornell.kfs.module.ld.document.validation.impl;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.kuali.kfs.coreservice.framework.CoreFrameworkServiceLocator;
+import org.kuali.kfs.coreservice.framework.parameter.ParameterConstants;
+import org.kuali.kfs.coreservice.framework.parameter.ParameterService;
+import org.kuali.kfs.krad.document.Document;
+import org.kuali.kfs.krad.util.GlobalVariables;
 import org.kuali.kfs.module.ld.LaborConstants;
 import org.kuali.kfs.module.ld.document.LaborExpenseTransferDocumentBase;
 import org.kuali.kfs.sys.KFSPropertyConstants;
 import org.kuali.kfs.sys.businessobject.AccountingLine;
 import org.kuali.kfs.sys.document.validation.GenericValidation;
 import org.kuali.kfs.sys.document.validation.event.AttributedDocumentEvent;
-import org.kuali.kfs.coreservice.framework.CoreFrameworkServiceLocator;
-import org.kuali.kfs.coreservice.framework.parameter.ParameterConstants;
-import org.kuali.kfs.coreservice.framework.parameter.ParameterService;
 import org.kuali.rice.kim.api.services.KimApiServiceLocator;
-import org.kuali.kfs.krad.document.Document;
-import org.kuali.kfs.krad.util.GlobalVariables;
 
 import edu.cornell.kfs.module.ld.CuLaborConstants;
 import edu.cornell.kfs.module.ld.CuLaborKeyConstants;
@@ -68,7 +71,7 @@ public class LaborExpenseTransferAccountTypesValidation extends GenericValidatio
 	 * get the invalid transfer target account type set for each source account invalid transfer account type
 	 * also set the complete invalid transfer target account type set.
 	 */
-	private void setInvalidTransferAccountTypesMap() {
+	public void setInvalidTransferAccountTypesMap() {
 		invalidTransferAccountTypesMap = new HashMap<String, Set<String>>();
 		invalidTransferTargetAccountTypesInParam = new HashSet<String>();
 		
@@ -82,7 +85,22 @@ public class LaborExpenseTransferAccountTypesValidation extends GenericValidatio
 			invalidTransferTargetAccountTypesInParam.add(acctTypePair[1]);
 		}
 	}
-	
+
+    public void setInvalidTransferAccountTypesMap_Collectors() {
+        Collection<String> sourceTargetAccountTypes = getParameterService().getParameterValuesAsString(LaborConstants.LABOR_MODULE_CODE,
+                ParameterConstants.DOCUMENT_COMPONENT, LdParameterConstants.INVALID_TO_ACCOUNT_BY_FROM_ACCOUNT);
+        
+        invalidTransferAccountTypesMap = sourceTargetAccountTypes.stream()
+                .collect(Collectors.groupingBy(
+                        (sourceTargetType) -> StringUtils.substringBefore(sourceTargetType, "="),
+                        Collectors.mapping(
+                                (sourceTargetType) -> StringUtils.substringAfter(sourceTargetType, "="), Collectors.toCollection(HashSet::new))));
+        
+        invalidTransferTargetAccountTypesInParam = invalidTransferAccountTypesMap.values().stream()
+                .flatMap(Set::stream)
+                .collect(Collectors.toCollection(HashSet::new));
+    }
+
     /**
      * This method checks if the account transfer is invalid between account types.
      * 
@@ -198,5 +216,17 @@ public class LaborExpenseTransferAccountTypesValidation extends GenericValidatio
 		
 		return parameterService;
 	}    
+
+	public void setParameterService(ParameterService parameterService) {
+	    this.parameterService = parameterService;
+	}
+
+	public Set<String> getInvalidTransferTargetAccountTypesInParam() {
+	    return invalidTransferTargetAccountTypesInParam;
+	}
+
+	public Map<String, Set<String>> getInvalidTransferAccountTypesMap() {
+	    return invalidTransferAccountTypesMap;
+	}
 
 }
