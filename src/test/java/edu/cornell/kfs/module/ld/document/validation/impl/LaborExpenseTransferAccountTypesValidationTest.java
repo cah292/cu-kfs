@@ -17,22 +17,24 @@ import edu.cornell.kfs.sys.CUKFSParameterKeyConstants.LdParameterConstants;
 public class LaborExpenseTransferAccountTypesValidationTest {
 
     private LaborExpenseTransferAccountTypesValidation oldValidation;
-    private LaborExpenseTransferAccountTypesValidation newValidation;
+    private LaborExpenseTransferAccountTypesValidation newValidationUsingCollectors;
+    private LaborExpenseTransferAccountTypesValidation newValidationUsingSingleStream;
 
     @Before
     public void setUp() throws Exception {
         oldValidation = new LaborExpenseTransferAccountTypesValidation();
-        newValidation = new LaborExpenseTransferAccountTypesValidation();
+        newValidationUsingCollectors = new LaborExpenseTransferAccountTypesValidation();
+        newValidationUsingSingleStream = new LaborExpenseTransferAccountTypesValidation();
     }
 
     @Test
     public void testSingletonParameter() throws Exception {
-        assertAccountTypeSetupsAreIdentical("key1=value1");
+        assertAccountTypeSetupsAreIdentical("EN=CC");
     }
 
     @Test
     public void testMultiValueParameter() throws Exception {
-        assertAccountTypeSetupsAreIdentical("key1=value1", "key2=value2", "key1=value1b", "key3=value3", "key3=value3b");
+        assertAccountTypeSetupsAreIdentical("EN=CC", "CC=EN", "JI=CC", "CC=JI", "XX=ZZ");
     }
 
     @Test
@@ -44,15 +46,26 @@ public class LaborExpenseTransferAccountTypesValidationTest {
         ParameterService mockParameterService = createMockParameterService(sourceTargetTypePairs);
         
         oldValidation.setParameterService(mockParameterService);
-        newValidation.setParameterService(mockParameterService);
+        newValidationUsingCollectors.setParameterService(mockParameterService);
+        newValidationUsingSingleStream.setParameterService(mockParameterService);
         
         oldValidation.setInvalidTransferAccountTypesMap();
-        newValidation.setInvalidTransferAccountTypesMap_Collectors();
+        newValidationUsingCollectors.setInvalidTransferAccountTypesMapUsingCollectors();
+        newValidationUsingSingleStream.setInvalidTransferAccountTypesMapUsingSingleStream();
         
-        assertEquals("Account types maps should have matched",
-                oldValidation.getInvalidTransferAccountTypesMap(), newValidation.getInvalidTransferAccountTypesMap());
-        assertEquals("Account types sets should have matched",
-                oldValidation.getInvalidTransferTargetAccountTypesInParam(), newValidation.getInvalidTransferTargetAccountTypesInParam());
+        assertEquals("Account types maps should have matched when using collectors",
+                oldValidation.getInvalidTransferAccountTypesMap(),
+                newValidationUsingCollectors.getInvalidTransferAccountTypesMap());
+        assertEquals("Account types sets should have matched when using collectors",
+                oldValidation.getInvalidTransferTargetAccountTypesInParam(),
+                newValidationUsingCollectors.getInvalidTransferTargetAccountTypesInParam());
+        
+        assertEquals("Account types maps should have matched when using single stream",
+                oldValidation.getInvalidTransferAccountTypesMap(),
+                newValidationUsingSingleStream.getInvalidTransferAccountTypesMap());
+        assertEquals("Account types sets should have matched when using single stream",
+                oldValidation.getInvalidTransferTargetAccountTypesInParam(),
+                newValidationUsingSingleStream.getInvalidTransferTargetAccountTypesInParam());
     }
 
     private ParameterService createMockParameterService(String... sourceTargetTypePairs) {

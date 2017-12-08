@@ -25,6 +25,7 @@ import org.kuali.rice.kim.api.services.KimApiServiceLocator;
 
 import edu.cornell.kfs.module.ld.CuLaborConstants;
 import edu.cornell.kfs.module.ld.CuLaborKeyConstants;
+import edu.cornell.kfs.sys.CUKFSConstants;
 import edu.cornell.kfs.sys.CUKFSParameterKeyConstants.LdParameterConstants;
 
 /**
@@ -86,19 +87,47 @@ public class LaborExpenseTransferAccountTypesValidation extends GenericValidatio
 		}
 	}
 
-    public void setInvalidTransferAccountTypesMap_Collectors() {
+    public void setInvalidTransferAccountTypesMapUsingCollectors() {
         Collection<String> sourceTargetAccountTypes = getParameterService().getParameterValuesAsString(LaborConstants.LABOR_MODULE_CODE,
                 ParameterConstants.DOCUMENT_COMPONENT, LdParameterConstants.INVALID_TO_ACCOUNT_BY_FROM_ACCOUNT);
         
         invalidTransferAccountTypesMap = sourceTargetAccountTypes.stream()
                 .collect(Collectors.groupingBy(
-                        (sourceTargetType) -> StringUtils.substringBefore(sourceTargetType, "="),
+                        this::getSourceAccountTypeFromPair,
                         Collectors.mapping(
-                                (sourceTargetType) -> StringUtils.substringAfter(sourceTargetType, "="), Collectors.toCollection(HashSet::new))));
+                                this::getTargetAccountTypeFromPair,
+                                Collectors.toCollection(HashSet::new))));
         
         invalidTransferTargetAccountTypesInParam = invalidTransferAccountTypesMap.values().stream()
                 .flatMap(Set::stream)
                 .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    public void setInvalidTransferAccountTypesMapUsingSingleStream() {
+        invalidTransferAccountTypesMap = new HashMap<>();
+        invalidTransferTargetAccountTypesInParam = new HashSet<>();
+        Collection<String> sourceTargetAccountTypes = getParameterService().getParameterValuesAsString(LaborConstants.LABOR_MODULE_CODE,
+                ParameterConstants.DOCUMENT_COMPONENT, LdParameterConstants.INVALID_TO_ACCOUNT_BY_FROM_ACCOUNT);
+        
+        sourceTargetAccountTypes.stream()
+                .peek(this::addSourceAccountTypeMapping)
+                .map(this::getTargetAccountTypeFromPair)
+                .forEach(invalidTransferTargetAccountTypesInParam::add);
+    }
+
+    private void addSourceAccountTypeMapping(String sourceTargetAccountTypePair) {
+        String sourceAccountType = getSourceAccountTypeFromPair(sourceTargetAccountTypePair);
+        String targetAccountType = getTargetAccountTypeFromPair(sourceTargetAccountTypePair);
+        Set<String> invalidTargetTypes = invalidTransferAccountTypesMap.computeIfAbsent(sourceAccountType, (key) -> new HashSet<>());
+        invalidTargetTypes.add(targetAccountType);
+    }
+
+    private String getSourceAccountTypeFromPair(String sourceTargetAccountTypePair) {
+        return StringUtils.substringBefore(sourceTargetAccountTypePair, CUKFSConstants.EQUALS_SIGN);
+    }
+
+    private String getTargetAccountTypeFromPair(String sourceTargetAccountTypePair) {
+        return StringUtils.substringAfter(sourceTargetAccountTypePair, CUKFSConstants.EQUALS_SIGN);
     }
 
     /**
