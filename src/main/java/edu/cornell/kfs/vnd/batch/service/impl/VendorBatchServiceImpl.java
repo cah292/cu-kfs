@@ -243,8 +243,91 @@ public class VendorBatchServiceImpl implements VendorBatchService{
                 
         return result;
 	}
-	
-	
+
+    public boolean maintainVendorsSequential(String fileName, BatchInputFileType batchInputFileType, StringBuilder processResults) {
+        boolean result = true;
+        
+        List<VendorBatchDetail> vendors = loadVendorDetailsFromFile(fileName, batchInputFileType);
+        
+        for (VendorBatchDetail vendorBatch  : vendors) {                                   
+            String returnVal = KFSConstants.EMPTY_STRING;
+            if (StringUtils.isBlank(vendorBatch.getVendorNumber())) {
+                processResults.append("add vendor : " + vendorBatch.getLogData() + NEW_LINE);
+                returnVal = addVendor(vendorBatch);
+            } else {
+                processResults.append("update vendor : " + vendorBatch.getLogData() + NEW_LINE);
+                returnVal = updateVendor(vendorBatch);
+            }
+            if (StringUtils.startsWith(returnVal, "Failed request")) {
+                LOG.error(returnVal);
+                result = false;
+                processResults.append(returnVal + NEW_LINE);
+            } else {
+                LOG.info("Document " + returnVal + " routed.");
+                processResults.append("Document " + returnVal + " routed." + NEW_LINE);
+            }
+        }        
+                
+        return result;
+    }
+
+    public boolean maintainVendorsParallel(String fileName, BatchInputFileType batchInputFileType, StringBuilder processResults) {
+        boolean result = true;
+        
+        List<VendorBatchDetail> vendors = loadVendorDetailsFromFile(fileName, batchInputFileType);
+        
+        StringBuilder vendorMessages = vendors.parallelStream()
+                .map(this::processVendor)
+                .reduce(new StringBuilder(), StringBuilder::append);
+        
+        result = vendorMessages.indexOf("Failed request") == -1;
+        processResults.append(vendorMessages);
+        
+        return result;
+    }
+
+    protected StringBuilder processVendor(VendorBatchDetail vendorBatch) {
+        StringBuilder vendorMessage = new StringBuilder();
+        String processingResult = KFSConstants.EMPTY_STRING;
+        if (StringUtils.isBlank(vendorBatch.getVendorNumber())) {
+            vendorMessage.append("add vendor : " + vendorBatch.getLogData() + NEW_LINE);
+            processingResult = addVendor(vendorBatch);
+        } else {
+            vendorMessage.append("update vendor : " + vendorBatch.getLogData() + NEW_LINE);
+            processingResult = updateVendor(vendorBatch);
+        }
+        if (StringUtils.startsWith(processingResult, "Failed request")) {
+            LOG.error(processingResult);
+            vendorMessage.append(processingResult + NEW_LINE);
+        } else {
+            LOG.info("Document " + processingResult + " routed.");
+            vendorMessage.append("Document " + processingResult + " routed." + NEW_LINE);
+        }
+        
+        return vendorMessage;
+    }
+
+    protected List<VendorBatchDetail> loadVendorDetailsFromFile(String fileName, BatchInputFileType batchInputFileType) {
+        byte[] fileByteContent = safelyLoadFileBytes(fileName);
+        
+        LOG.info("Attempting to parse the file");
+        Object parsedObject = null;
+        try {
+            parsedObject =  batchInputFileService.parse(batchInputFileType, fileByteContent);
+        } catch (ParseException e) {
+            String errorMessage = "Error parsing batch file: " + e.getMessage();
+            LOG.error(errorMessage, e);
+            throw new RuntimeException(errorMessage);
+        }
+        
+        if (!(parsedObject instanceof List)) {
+            String errorMessage = "Parsed file was not of the expected type.  Expected [" + List.class + "] but got [" + parsedObject.getClass() + "].";
+            criticalError(errorMessage);
+        }
+               
+        return (List<VendorBatchDetail>) parsedObject;
+    }
+
     /**
     *
     * Accepts a file name and returns a byte-array of the file name contents, if possible.
@@ -298,7 +381,7 @@ public class VendorBatchServiceImpl implements VendorBatchService{
 	/*
 	 * create vendor document and route
 	 */
-	private String addVendor(VendorBatchDetail vendorBatch) {
+	protected String addVendor(VendorBatchDetail vendorBatch) {
         GlobalVariables.setMessageMap(new MessageMap());
     	     
         // create and route doc as system user
@@ -487,7 +570,7 @@ public class VendorBatchServiceImpl implements VendorBatchService{
 	/*
 	 * update vendor record.  vendor number must be valid.
 	 */
-	private String updateVendor(VendorBatchDetail vendorBatch) {
+	protected String updateVendor(VendorBatchDetail vendorBatch) {
         GlobalVariables.setMessageMap(new MessageMap());
 
 		// create and route doc as system user
