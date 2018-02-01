@@ -2,6 +2,7 @@ package edu.cornell.kfs.vnd.batch.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +15,7 @@ public class VendorBatchServiceImplParallelTest {
     private static final String TEST_FILE_01_NAME = "testFile01.txt";
 
     private TestVendorBatchServiceImpl vendorBatchService;
+    
 
     @Before
     public void setUp() throws Exception {
@@ -42,12 +44,16 @@ public class VendorBatchServiceImplParallelTest {
         System.out.println("---------------");
         System.out.println("Sequential string result:");
         System.out.println(sequentialResults.toString());
+        System.out.println("Sequential string length: " + sequentialResults.length());
         System.out.println("---------------");
         System.out.println("Parallel string result:");
-        //System.out.println(parallelResults.toString());
+        System.out.println(parallelResults.toString());
+        System.out.println("Parallel string length: " + parallelResults.length());
     }
 
     public static class TestVendorBatchServiceImpl extends VendorBatchServiceImpl {
+        private AtomicInteger vendorIdSequence = new AtomicInteger(1000);
+        
         @Override
         protected List<VendorBatchDetail> loadVendorDetailsFromFile(String fileName, BatchInputFileType batchInputFileType) {
             List<VendorBatchDetail> testDetails = new ArrayList<>();
@@ -64,7 +70,7 @@ public class VendorBatchServiceImplParallelTest {
         @Override
         protected String addVendor(VendorBatchDetail vendorBatch) {
             pauseFor200ms();
-            vendorBatch.setVendorNumber("VND" + vendorBatch.hashCode());
+            vendorBatch.setVendorNumber("VND" + vendorIdSequence.incrementAndGet());
             return vendorBatch.getVendorNumber();
         }
         

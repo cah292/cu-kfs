@@ -16,10 +16,22 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.kuali.kfs.krad.bo.Attachment;
+import org.kuali.kfs.krad.bo.Note;
+import org.kuali.kfs.krad.document.Document;
+import org.kuali.kfs.krad.exception.ValidationException;
+import org.kuali.kfs.krad.maintenance.MaintenanceDocument;
+import org.kuali.kfs.krad.service.AttachmentService;
+import org.kuali.kfs.krad.service.DocumentService;
+import org.kuali.kfs.krad.util.ErrorMessage;
+import org.kuali.kfs.krad.util.GlobalVariables;
+import org.kuali.kfs.krad.util.MessageMap;
+import org.kuali.kfs.krad.util.ObjectUtils;
 import org.kuali.kfs.sys.KFSConstants;
 import org.kuali.kfs.sys.batch.BatchInputFileType;
 import org.kuali.kfs.sys.batch.service.BatchInputFileService;
@@ -36,17 +48,6 @@ import org.kuali.rice.core.api.config.property.ConfigurationService;
 import org.kuali.rice.core.api.datetime.DateTimeService;
 import org.kuali.rice.kim.api.identity.Person;
 import org.kuali.rice.kim.api.identity.PersonService;
-import org.kuali.kfs.krad.bo.Attachment;
-import org.kuali.kfs.krad.bo.Note;
-import org.kuali.kfs.krad.document.Document;
-import org.kuali.kfs.krad.exception.ValidationException;
-import org.kuali.kfs.krad.maintenance.MaintenanceDocument;
-import org.kuali.kfs.krad.service.AttachmentService;
-import org.kuali.kfs.krad.service.DocumentService;
-import org.kuali.kfs.krad.util.ErrorMessage;
-import org.kuali.kfs.krad.util.GlobalVariables;
-import org.kuali.kfs.krad.util.MessageMap;
-import org.kuali.kfs.krad.util.ObjectUtils;
 
 import edu.cornell.kfs.vnd.batch.service.VendorBatchService;
 import edu.cornell.kfs.vnd.businessobject.CuVendorAddressExtension;
@@ -276,9 +277,9 @@ public class VendorBatchServiceImpl implements VendorBatchService{
         
         List<VendorBatchDetail> vendors = loadVendorDetailsFromFile(fileName, batchInputFileType);
         
-        StringBuilder vendorMessages = vendors.parallelStream()
+        String vendorMessages = vendors.parallelStream()
                 .map(this::processVendor)
-                .reduce(new StringBuilder(), StringBuilder::append);
+                .collect(Collectors.joining());
         
         result = vendorMessages.indexOf("Failed request") == -1;
         processResults.append(vendorMessages);
