@@ -4,13 +4,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang.StringUtils;
 import org.kuali.kfs.sys.batch.BatchInputFileType;
 import org.kuali.kfs.sys.batch.service.impl.BatchInputFileServiceImpl;
 import org.kuali.kfs.sys.exception.FileStorageException;
 import org.kuali.rice.kim.api.identity.Person;
-
-import org.apache.commons.lang.StringUtils;
 
 import edu.cornell.kfs.sys.batch.CuBatchInputFileType;
 
@@ -72,4 +75,37 @@ public class CuBatchInputFileServiceImpl extends BatchInputFileServiceImpl {
 
         return saveFileName;
     }
+
+    public List<String> listInputFileNamesWithDoneFileParallel(BatchInputFileType batchInputFileType) {
+        if (batchInputFileType == null) {
+            LOG.error("an invalid(null) argument was given");
+            throw new IllegalArgumentException("an invalid(null) argument was given");
+        }
+        
+        File batchTypeDirectory = new File(batchInputFileType.getDirectoryPath());
+        File[] doneFiles = batchTypeDirectory.listFiles(new CuDoneFilenameFilter());
+        
+        return Arrays.stream(doneFiles)
+                .parallel()
+                .map((doneFile) -> findDataFileForDoneFile(doneFile, batchInputFileType))
+                .filter(File::exists)
+                .map(File::getPath)
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    protected File findDataFileForDoneFile(File doneFile, BatchInputFileType batchInputFileType) {
+        String dataFileName = StringUtils.substringBeforeLast(doneFile.getPath(), ".");
+        if (!StringUtils.isBlank(batchInputFileType.getFileExtension())) {
+            dataFileName += "." + batchInputFileType.getFileExtension();
+        }
+        return new File(dataFileName);
+    }
+
+    /**
+     * Needed due to constructor visibility problems on the filter superclass.
+     */
+    protected class CuDoneFilenameFilter extends DoneFilenameFilter {
+        
+    }
+
 }
