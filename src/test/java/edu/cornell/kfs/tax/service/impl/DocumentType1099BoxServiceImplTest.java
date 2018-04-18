@@ -3,7 +3,7 @@ package edu.cornell.kfs.tax.service.impl;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.easymock.EasyMock;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.kuali.kfs.coreservice.framework.parameter.ParameterService;
@@ -16,6 +16,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DocumentType1099BoxServiceImplTest {
 
@@ -69,10 +72,10 @@ public class DocumentType1099BoxServiceImplTest {
 
     protected void setupMockParameterServiceForMappings(String... mappings) {
         Collection<String> mappingsCollection = Arrays.asList(mappings);
-        ParameterService parameterService = EasyMock.createMock(ParameterServiceImpl.class);
-        EasyMock.expect(parameterService.getParameterValuesAsString(CUTaxConstants.TAX_NAMESPACE, CUTaxConstants.TAX_1099_PARM_DETAIL,
+        ParameterService parameterService = mock(ParameterServiceImpl.class);
+        when(parameterService.getParameterValuesAsString(CUTaxConstants.TAX_NAMESPACE, CUTaxConstants.TAX_1099_PARM_DETAIL,
                 CUTaxConstants.Tax1099ParameterNames.DOCUMENT_TYPE_TO_TAX_BOX)).andStubReturn(mappingsCollection);
-        EasyMock.replay(parameterService);
+        
         documentType1099BoxService.setParameterService(parameterService);
     }
 
