@@ -29,8 +29,6 @@ public class DocumentType1099BoxServiceImplTest {
         documentType1099BoxService = new DocumentType1099BoxServiceImpl();
     }
 
-
-
     @Test
     public void testSearchForMappings() throws Exception {
         setupMockParameterServiceForMappings("APCP=2", "APLB=3");
@@ -68,13 +66,11 @@ public class DocumentType1099BoxServiceImplTest {
         assertNull("Document type should not have been mapped to a 1099 box", documentType1099BoxService.getDocumentType1099Box(documentTypeName));
     }
 
-
-
     protected void setupMockParameterServiceForMappings(String... mappings) {
         Collection<String> mappingsCollection = Arrays.asList(mappings);
         ParameterService parameterService = mock(ParameterServiceImpl.class);
         when(parameterService.getParameterValuesAsString(CUTaxConstants.TAX_NAMESPACE, CUTaxConstants.TAX_1099_PARM_DETAIL,
-                CUTaxConstants.Tax1099ParameterNames.DOCUMENT_TYPE_TO_TAX_BOX)).andStubReturn(mappingsCollection);
+                CUTaxConstants.Tax1099ParameterNames.DOCUMENT_TYPE_TO_TAX_BOX)).thenReturn(mappingsCollection);
         
         documentType1099BoxService.setParameterService(parameterService);
     }

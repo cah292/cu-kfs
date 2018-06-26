@@ -16,9 +16,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import edu.cornell.kfs.sys.service.impl.TestUserFavoriteAccountServiceImpl;
-import org.easymock.EasyMock;
-import org.easymock.IMockBuilder;
-import org.easymock.Mock;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,9 +43,15 @@ import edu.cornell.kfs.module.purap.util.PurApFavoriteAccountLineBuilderForIWant
 import edu.cornell.kfs.module.purap.util.PurchasingFavoriteAccountLineBuilderForDistribution;
 import edu.cornell.kfs.module.purap.util.PurchasingFavoriteAccountLineBuilderForLineItem;
 import edu.cornell.kfs.sys.businessobject.FavoriteAccount;
+import edu.cornell.kfs.sys.document.web.struts.CuFinancialMaintenanceDocumentAction;
 import edu.cornell.kfs.sys.service.UserFavoriteAccountService;
 import edu.cornell.kfs.sys.service.UserProcurementProfileValidationService;
 import edu.cornell.kfs.sys.service.impl.UserProcurementProfileValidationServiceImpl;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import org.mockito.Mock;
 
 public class FavoriteAccountLineBuilderTest {
     private static UserProcurementProfileValidationService userProcurementProfileValidationService;
@@ -120,16 +124,8 @@ public class FavoriteAccountLineBuilderTest {
         GlobalVariables.setMessageMap(new MessageMap());
     }
 
-    private static <T extends Document> T getMockedDocument(Class<T> documentClass) {
-    	Pattern nonMockedMethodsPattern = Pattern.compile("^(get|set).*$");
-        List<String> methodNames = new ArrayList<>();
-        for (Method method : documentClass.getMethods()) {
-            if (!Modifier.isFinal(method.getModifiers()) && !nonMockedMethodsPattern.matcher(method.getName()).matches()) {
-                methodNames.add(method.getName());
-            }
-        }
-        IMockBuilder<T> builder = EasyMock.createMockBuilder(documentClass).addMockedMethods(methodNames.toArray(new String[0]));
-        return builder.createNiceMock();
+    private static <T extends Document> T getMockedDocument(Class<T> documentClass) {       
+        return mock(documentClass, CALLS_REAL_METHODS);
     }
 
     @Before
