@@ -72,8 +72,9 @@ public class EzraServiceImpl implements EzraService {
 	
 
 	public boolean updateProposals() {
-		
-		List<EzraProposalAward> proposals = ezraAwardProposalDao.getProposals();
+//		List<EzraProposalAward> proposals = ezraAwardProposalDao.getProposals();
+		List<EzraProposalAward> proposals = ezraAwardProposalDao.getSingleAwardProposal("88178");
+
 		Map fields = new HashMap();
 		for (EzraProposalAward ezraProposal : proposals) {
 			String proposalId = ezraProposal.getProjectId();
@@ -122,7 +123,8 @@ public class EzraServiceImpl implements EzraService {
 	
 	public boolean updateAwardsSince(Date date) {
 		boolean result = true;
-		List<EzraProposalAward> awards = ezraAwardProposalDao.getAwardsUpdatedSince(date);
+//		List<EzraProposalAward> awards = ezraAwardProposalDao.getAwardsUpdatedSince(date);
+		List<EzraProposalAward> awards = ezraAwardProposalDao.getSingleAwardProposal("88178");
 		Map fields = new HashMap();
 		LOG.info("Retrieved : "+ awards.size()+" Awards to update since "+ date.toString());
 		for (EzraProposalAward ezraAward : awards) {

@@ -16,5 +16,6 @@ public interface EzraAwardProposalDao {
 
 	public List<EzraProposalAward> getProposals();
 	public List<EzraProposalAward> getAwardsUpdatedSince(Date date);
-	
+	public List<EzraProposalAward> getSingleAwardProposal(String ezraProjectId);
+
 }

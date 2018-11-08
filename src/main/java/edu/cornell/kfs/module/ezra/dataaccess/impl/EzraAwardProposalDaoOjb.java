@@ -71,4 +71,18 @@ public class EzraAwardProposalDaoOjb extends PlatformAwareDaoBaseOjb implements 
         return excludedAwardDescriptions;
     }
 
+
+
+	public List<EzraProposalAward> getSingleAwardProposal(String ezraProjectId) {
+		BusinessObjectService bos = SpringContext.getBean(BusinessObjectService.class);
+
+		Criteria criteria = new Criteria();
+		criteria.addEqualTo("projectId", ezraProjectId);
+		criteria.addLike("awardProposalId", "A%");
+		criteria.addNotIn("awardDescriptionCode", getExcludedAwardDescriptions());
+
+
+		return (List<EzraProposalAward>)getPersistenceBrokerTemplate().getCollectionByQuery(QueryFactory.newQuery(EzraProposalAward.class, criteria));
+	}
+
 }
