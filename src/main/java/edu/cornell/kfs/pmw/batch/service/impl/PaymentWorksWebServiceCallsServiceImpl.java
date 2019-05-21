@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -18,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -365,7 +369,7 @@ public class PaymentWorksWebServiceCallsServiceImpl implements PaymentWorksWebSe
         Response response = null;
         
         try {
-            response = performSupplierUpload(vendorCsvDataStream);
+            response = performSupplierUploadWithSocketTimeoutRetry(vendorCsvDataStream);
             response.bufferEntity();
             String responseContent = response.readEntity(String.class);
             return getReceivedSuppliersCountIfSupplierUploadSucceeded(responseContent);
@@ -373,8 +377,28 @@ public class PaymentWorksWebServiceCallsServiceImpl implements PaymentWorksWebSe
             CURestClientUtils.closeQuietly(response);
         }
     }
+    
+    private Response performSupplierUploadWithSocketTimeoutRetry(InputStream vendorCsvDataStream) {
+        Throwable mostRecentException = null;
+        Response uploadResponse = null;
+        int i = 0;
+        while (i < 5) {
+            i++;
+            try {
+                uploadResponse = performSupplierUpload(vendorCsvDataStream);
+                LOG.info("performSupplierUploadWithSocketTimeoutRetry, successfully made service call on attempt number " + i);
+                return uploadResponse;
+            } catch (SocketTimeoutException | ProcessingException ste) {
+                mostRecentException = ste;
+                LOG.error("performSupplierUploadWithSocketTimeoutRetry, got a socket time out exception on attempt number " + i);
+            }
+        }
+        LOG.error("performSupplierUploadWithSocketTimeoutRetry, unable to make service call after " + i + " attempts, throwing most recent exception.");
+        throw new RuntimeException(mostRecentException);
+        
+    }
 
-    private Response performSupplierUpload(InputStream vendorCsvDataStream) {
+    private Response performSupplierUpload(InputStream vendorCsvDataStream) throws SocketTimeoutException {
         Client client = null;
         
         try {

@@ -22,6 +22,8 @@ import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.kuali.kfs.krad.exception.ValidationException;
 import org.springframework.http.HttpMethod;
 
@@ -42,17 +44,21 @@ import edu.cornell.kfs.sys.web.mock.MockServiceEndpointBase;
  * with what PaymentWorks would return under similar circumstances.
  */
 public class MockPaymentWorksUploadSuppliersEndpoint extends MockServiceEndpointBase {
-
+    private static final Logger LOG = LogManager.getLogger(MockPaymentWorksUploadSuppliersEndpoint.class);
     private static final String UPLOAD_SUPPLIERS_ENDPOINT_HANDLER_PATTERN = "/suppliers/load/";
 
     private String expectedAuthorizationToken;
     private PaymentWorksVendorFixture[] expectedVendorsForNextUpload;
     private boolean calledUploadSuppliersService;
     private boolean forceVendorCountMismatch;
+    private int callCount;
+    private int socketTimeoutExceptionFactor;
 
     public MockPaymentWorksUploadSuppliersEndpoint(String multiPartContentDirectory, String expectedAuthorizationToken) {
         this.multiPartContentDirectory = multiPartContentDirectory;
         this.expectedAuthorizationToken = expectedAuthorizationToken;
+        callCount = 0;
+        socketTimeoutExceptionFactor = 2;
     }
 
     @Override
@@ -74,6 +80,16 @@ public class MockPaymentWorksUploadSuppliersEndpoint extends MockServiceEndpoint
 
     @Override
     protected void processRequest(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
+        callCount++;
+        String logMessageStarter = "processRequest, call count = " + callCount + " divided by " + socketTimeoutExceptionFactor;
+        if (callCount % socketTimeoutExceptionFactor != 0) {
+            LOG.error(logMessageStarter + " does not have a remainder of zero, so wait for socket exception");
+            waitLongEnoughToCauseSocketTimeout();
+            return;
+        } else {
+            LOG.info(logMessageStarter + " does have a remainder of zero, so  process as normal");
+        }
+        
         this.calledUploadSuppliersService = true;
         assertRequestHasCorrectHttpMethod(request, HttpMethod.POST);
         assertRequestHasCorrectContentType(request, ContentType.MULTIPART_FORM_DATA);
@@ -89,6 +105,14 @@ public class MockPaymentWorksUploadSuppliersEndpoint extends MockServiceEndpoint
             setupSuccessResponse(response, (Integer) processingResult.getValue());
         } else {
             setupErrorResponse(response, (String) processingResult.getValue());
+        }
+    }
+
+    private void waitLongEnoughToCauseSocketTimeout() {
+        try {
+            Thread.sleep(100000);
+        } catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
         }
     }
 
