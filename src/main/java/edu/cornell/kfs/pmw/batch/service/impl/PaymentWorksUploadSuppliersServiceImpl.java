@@ -1,10 +1,8 @@
 package edu.cornell.kfs.pmw.batch.service.impl;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +40,7 @@ import edu.cornell.kfs.pmw.batch.service.PaymentWorksBatchUtilityService;
 import edu.cornell.kfs.pmw.batch.service.PaymentWorksUploadSuppliersReportService;
 import edu.cornell.kfs.pmw.batch.service.PaymentWorksUploadSuppliersService;
 import edu.cornell.kfs.pmw.batch.service.PaymentWorksWebServiceCallsService;
+import edu.cornell.kfs.sys.util.ByteContent;
 import edu.cornell.kfs.sys.util.EnumConfiguredMappingStrategy;
 
 public class PaymentWorksUploadSuppliersServiceImpl implements PaymentWorksUploadSuppliersService {
@@ -96,13 +95,14 @@ public class PaymentWorksUploadSuppliersServiceImpl implements PaymentWorksUploa
     }
 
     protected boolean uploadVendorsToPaymentWorks(Collection<PaymentWorksVendor> vendors, PaymentWorksUploadSuppliersBatchReportData reportData) {
-        InputStream vendorCsvDataStream = null;
+        //InputStream vendorCsvDataStream = null;
         
         try {
             checkForPotentialVendorDeletionAttempts(vendors);
             byte[] vendorCsvData = generateVendorCsvDataForUpload(vendors);
-            vendorCsvDataStream = new ByteArrayInputStream(vendorCsvData);
-            int receivedVendorCount = paymentWorksWebServiceCallsService.uploadVendorsToPaymentWorks(vendorCsvDataStream);
+            //vendorCsvDataStream = new ByteArrayInputStream(vendorCsvData);
+            ByteContent wrappedVendorCsvData = new ByteContent(vendorCsvData);
+            int receivedVendorCount = paymentWorksWebServiceCallsService.uploadVendorsToPaymentWorks(wrappedVendorCsvData);
             reportData.getRecordsProcessedByPaymentWorksSummary().setRecordCount(receivedVendorCount);
             if (receivedVendorCount != vendors.size()) {
                 LOG.warn("uploadVendorsToPaymentWorks, " + vendors.size()
@@ -121,7 +121,7 @@ public class PaymentWorksUploadSuppliersServiceImpl implements PaymentWorksUploa
                     formatGlobalErrorMessage(errorPrefix, buildVendorNumberList(vendors), e.getMessage()));
             return false;
         } finally {
-            IOUtils.closeQuietly(vendorCsvDataStream);
+            //IOUtils.closeQuietly(vendorCsvDataStream);
         }
     }
 

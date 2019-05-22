@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,8 +19,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -51,6 +50,7 @@ import edu.cornell.kfs.pmw.batch.xmlObjects.PaymentWorksNewVendorRequestDetailDT
 import edu.cornell.kfs.pmw.batch.xmlObjects.PaymentWorksNewVendorRequestsRootDTO;
 import edu.cornell.kfs.sys.CUKFSConstants;
 import edu.cornell.kfs.sys.service.WebServiceCredentialService;
+import edu.cornell.kfs.sys.util.ByteContent;
 import edu.cornell.kfs.sys.util.CURestClientUtils;
 import edu.cornell.kfs.sys.web.CuMultiPartWriter;
 
@@ -365,11 +365,11 @@ public class PaymentWorksWebServiceCallsServiceImpl implements PaymentWorksWebSe
     }
 
     @Override
-    public int uploadVendorsToPaymentWorks(InputStream vendorCsvDataStream) {
+    public int uploadVendorsToPaymentWorks(ByteContent vendorCsvData) {
         Response response = null;
         
         try {
-            response = performSupplierUploadWithSocketTimeoutRetry(vendorCsvDataStream);
+            response = performSupplierUploadWithSocketTimeoutRetry(vendorCsvData);
             response.bufferEntity();
             String responseContent = response.readEntity(String.class);
             return getReceivedSuppliersCountIfSupplierUploadSucceeded(responseContent);
@@ -378,19 +378,23 @@ public class PaymentWorksWebServiceCallsServiceImpl implements PaymentWorksWebSe
         }
     }
     
-    private Response performSupplierUploadWithSocketTimeoutRetry(InputStream vendorCsvDataStream) {
+    private Response performSupplierUploadWithSocketTimeoutRetry(ByteContent vendorCsvData) {
         Throwable mostRecentException = null;
         Response uploadResponse = null;
+        InputStream vendorCsvDataStream = null;
         int i = 0;
         while (i < 5) {
             i++;
             try {
+                vendorCsvDataStream = vendorCsvData.toInputStream();
                 uploadResponse = performSupplierUpload(vendorCsvDataStream);
                 LOG.info("performSupplierUploadWithSocketTimeoutRetry, successfully made service call on attempt number " + i);
                 return uploadResponse;
             } catch (SocketTimeoutException | ProcessingException ste) {
                 mostRecentException = ste;
                 LOG.error("performSupplierUploadWithSocketTimeoutRetry, got a socket time out exception on attempt number " + i);
+            } finally {
+                IOUtils.closeQuietly(vendorCsvDataStream);
             }
         }
         LOG.error("performSupplierUploadWithSocketTimeoutRetry, unable to make service call after " + i + " attempts, throwing most recent exception.");
