@@ -165,6 +165,12 @@ public class Award extends PersistableBusinessObjectBase implements MutableInact
     private LetterOfCreditFundGroup letterOfCreditFundGroup;
     private transient String invoiceLink;
 
+    // KF-175: New Award attributes
+    private String primeAgreementNumber;
+    private String autoApproveReason;
+    private String agencyReference;
+    // End KF-175 block
+
     public Award() {
         // Must use ArrayList because its get() method automatically grows the array for Struts.
         awardProjectDirectors = new ArrayList<>();
@@ -1190,5 +1196,31 @@ public class Award extends PersistableBusinessObjectBase implements MutableInact
     public void setInvoiceLink(String invoiceLink) {
         this.invoiceLink = invoiceLink;
     }
+
+    // KF-175: Getters and setters for new Award fields
+    public String getPrimeAgreementNumber() {
+        return primeAgreementNumber;
+    }
+
+    public void setPrimeAgreementNumber(String primeAgreementNumber) {
+        this.primeAgreementNumber = primeAgreementNumber;
+    }
+
+    public String getAutoApproveReason() {
+        return autoApproveReason;
+    }
+
+    public void setAutoApproveReason(String autoApproveReason) {
+        this.autoApproveReason = autoApproveReason;
+    }
+
+    public String getAgencyReference() {
+        return agencyReference;
+    }
+
+    public void setAgencyReference(String agencyReference) {
+        this.agencyReference = agencyReference;
+    }
+    // End KF-175 block
 
 }
