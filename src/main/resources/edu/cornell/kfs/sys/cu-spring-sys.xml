@@ -187,6 +187,21 @@
 			</props>
 		</property>
 	</bean>
+	
+	<bean id="edwDataSourceXAPool" class="org.kuali.rice.core.framework.persistence.jdbc.datasource.XAPoolDataSource"
+          p:transactionManager-ref="transactionManagerXAPool" p:driverClassName="${kfs.datasource.driver.name}"
+          p:url="${edw.datasource.url}" p:maxSize="1" p:minSize="1" p:maxWait="1"
+          p:validationQuery="${kfs.datasource.validating.query}" p:username="${edw.datasource.username}"
+          p:password="${edw.datasource.password}"/>
+          
+    <bean id="edwPersonDao" class="edu.cornell.kfs.sys.cynergykimfeed.dataaccess.impl.EdwPersonDaoImpl">
+		<property name="datasource">
+			<ref bean="edwDataSourceXAPool" />
+		</property>
+		<property name="parameterService">
+			<ref bean="parameterService" />
+		</property>
+	</bean>
 
 <!-- KFSPTS-985 : User Favorites Profile -->
 
