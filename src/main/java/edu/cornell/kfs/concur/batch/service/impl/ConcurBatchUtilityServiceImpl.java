@@ -158,6 +158,11 @@ public class ConcurBatchUtilityServiceImpl implements ConcurBatchUtilityService 
         return Arrays.stream(validStatuses)
                 .anyMatch((validStatusValue) -> StringUtils.equalsIgnoreCase(validStatusValue, status));
     }
+    
+    @Override
+    public boolean shouldProcessRequestedCashAdvancesFromSaeData() {
+        return (getConcurParameterValue(ConcurParameterConstants.CONCUR_PROCESS_CASH_ADVANCES_FROM_SAE_DATA_IND).equalsIgnoreCase(KFSConstants.ParameterValues.YES));
+    }
 
     public DateTimeService getDateTimeService() {
         return dateTimeService;

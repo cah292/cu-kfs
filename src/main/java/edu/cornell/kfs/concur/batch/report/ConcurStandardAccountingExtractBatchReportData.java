@@ -151,7 +151,7 @@ public class ConcurStandardAccountingExtractBatchReportData implements ConcurEma
     
     @Override
     public String getReportTypeName() {
-        return "standard accounting extract";
+        return "standard accounting extract trip reimbursement";
     }
 
 }

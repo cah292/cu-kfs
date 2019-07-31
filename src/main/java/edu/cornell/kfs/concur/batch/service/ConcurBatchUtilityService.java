@@ -144,4 +144,11 @@ public interface ConcurBatchUtilityService {
      * @return True if the status value is a recognized one for KFS PDP employee payment processing, false otherwise.
      */
     boolean isValidTravelerStatusForProcessingAsPDPEmployeeType(String status);
+
+    /**
+     * Returns true when KFS System parameter CONCUR_PROCESS_CASH_ADVANCES_FROM_SAE_DATA_IND is set to Y;
+     * otherwise returns false.
+     * @return
+     */
+    boolean shouldProcessRequestedCashAdvancesFromSaeData();
 }

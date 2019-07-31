@@ -15,6 +15,7 @@ import org.kuali.kfs.gl.GeneralLedgerConstants;
 import org.kuali.kfs.krad.exception.ValidationException;
 import org.kuali.kfs.sys.batch.BatchInputFileType;
 import org.kuali.kfs.sys.batch.service.BatchInputFileService;
+import org.kuali.kfs.sys.KFSConstants;
 import org.kuali.rice.core.api.util.type.KualiDecimal;
 
 import edu.cornell.kfs.concur.ConcurConstants;
@@ -357,6 +358,11 @@ public class ConcurStandardAccountingExtractServiceImpl implements ConcurStandar
         } else {
             LOG.info("createDoneFileForCollectorFile, the Collector upload file was not created, so we don't want to create the .done file.");
         }
+    }
+    
+    @Override
+    public boolean shouldUseSaeCashAdvanceData() {
+        return (getConcurBatchUtilityService().getConcurParameterValue(ConcurParameterConstants.CONCUR_PROCESS_CASH_ADVANCES_FROM_SAE_DATA_IND).equalsIgnoreCase(KFSConstants.ParameterValues.YES));
     }
 
     private boolean collectorUploadFileExists(String collectorFileName) {

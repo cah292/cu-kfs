@@ -108,6 +108,10 @@ public class ConcurConstants {
         public static final String SAE_VALIDATION_SUB_REPORT_BYPASSED_XXXX_NOTE = "SAE_VALIDATION_SUB_REPORT_BYPASSED_XXXX_NOTE_NOT_SET_IN_CONFIGURATION_FILE";
         public static final String SAE_MISSING_OBJECT_CODES_SUB_REPORT_TITLE_NOT_SET_IN_CONFIGURATION_FILE = "SAE_MISSING_OBJECT_CODES_SUB_REPORT_TITLE_NOT_SET_IN_CONFIGURATION_FILE";
     }
+    
+    public static final String SAE_REQUESTED_CASH_ADVANCE_INDICATOR = "CASH";
+    public static final String SAE_REQUESTED_CASH_ADVANCE_APPROVED_BY_CONCUR_ADMIN = "1";
+    public static final String SAE_CASH_ADVANCE_BEING_APPLIED_TO_TRIP_REIMBURSEMENT = "2";
 
     public static final String REQUEST_EXTRACT_CASH_ADVANCE_INDICATOR = "CASH";
     public static final String SPACING_STRING_FOR_OUTPUT = "    ";
@@ -124,5 +128,16 @@ public class ConcurConstants {
         public static final String REQUEST_EXTRACT_REPORT_CONCUR_FILE_NAME_LABEL_NOT_SET_IN_CONFIGURATION_FILE = "REQUEST_EXTRACT_REPORT_CONCUR_FILE_NAME_LABEL_NOT_SET_IN_CONFIGURATION_FILE";
         public static final String REQUEST_EXTRACT_VALIDATION_SUB_REPORT_TITLE_NOT_SET_IN_CONFIGURATION_FILE = "REQUEST_EXTRACT_VALIDATION_SUB_REPORT_TITLE_NOT_SET_IN_CONFIGURATION_FILE";
     }
+    
+    public static class SaeRequestedCashAdvancesExtractReport {
+        public static final String UNKNOWN_SAE_FILENAME = "UNKNOWN_SAE_FILENAME";
+        public static final String NO_RECORDS_WITH_VALIDATION_ERRORS_MESSAGE = "No records with validation errors.";
+        public static final String NO_VALIDATION_ERROR_MESSAGES_TO_OUTPUT = "No validation errors to output.";
+        public static final String END_OF_REPORT_MESSAGE = "End of report.";
+        public static final String PREFIX_FIRST_PART_NOT_SET_IN_CONFIGURATION_FILE = "PREFIX_FIRST_PART_NOT_SET_IN_CONFIGURATION_FILE";
+        public static final String PREFIX_SECOND_PART_NOT_SET_IN_CONFIGURATION_FILE = "PREFIX_SECOND_PART_NOT_SET_IN_CONFIGURATION_FILE";
+    }
+    
+    public static final String SAE_REQUEST_ID_PREFIX = "SAE";
 
 }
