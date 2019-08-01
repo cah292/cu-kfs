@@ -33,7 +33,7 @@ import edu.cornell.kfs.sys.service.CUMarshalService;
 import edu.cornell.kfs.sys.util.LoadFileUtils;
 
 public class ConcurBatchUtilityServiceImpl implements ConcurBatchUtilityService {
-	private static final Logger LOG = LogManager.getLogger(ConcurBatchUtilityServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ConcurBatchUtilityServiceImpl.class);
     protected BatchInputFileService batchInputFileService;
     protected DataDictionaryService dataDictionaryService;
     protected DateTimeService dateTimeService;
@@ -161,7 +161,7 @@ public class ConcurBatchUtilityServiceImpl implements ConcurBatchUtilityService 
     
     @Override
     public boolean shouldProcessRequestedCashAdvancesFromSaeData() {
-        return (getConcurParameterValue(ConcurParameterConstants.CONCUR_PROCESS_CASH_ADVANCES_FROM_SAE_DATA_IND).equalsIgnoreCase(KFSConstants.ParameterValues.YES));
+        return (StringUtils.equalsIgnoreCase(getConcurParameterValue(ConcurParameterConstants.CONCUR_PROCESS_CASH_ADVANCES_FROM_SAE_DATA_IND), KFSConstants.ParameterValues.YES));
     }
 
     public DateTimeService getDateTimeService() {

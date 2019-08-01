@@ -30,7 +30,7 @@ import edu.cornell.kfs.concur.batch.service.ConcurSaeCreateRequestedCashAdvanceF
 import edu.cornell.kfs.concur.batch.service.ConcurSaeCreateRequestedCashAdvanceReportService;
 
 public class ConcurSaeCreateRequestedCashAdvanceFileServiceImpl implements ConcurSaeCreateRequestedCashAdvanceFileService {
-	private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvanceFileServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvanceFileServiceImpl.class);
     protected BatchInputFileType batchInputFileType;
     protected BatchInputFileService batchInputFileService;
     protected ConcurBatchUtilityService concurBatchUtilityService;
@@ -59,10 +59,10 @@ public class ConcurSaeCreateRequestedCashAdvanceFileServiceImpl implements Concu
                 try {
                     getConcurCreateCashAdvancePdpFeedFileService().createDoneFileForPdpFile(standardAccountingExtractFile.getFullyQualifiedRequestedCashAdvancesPdpFileName());
                 } catch (IOException ioe) {
-                    LOG.error("processFile: ConcurCreateCashAdvancePdpFeedFileService().createDoneFileForPdpFile generated IOException attempting to create .done file for generated PdpFeedFile: " + standardAccountingExtractFile.getFullyQualifiedRequestedCashAdvancesPdpFileName());
+                    LOG.error(new String("processFile: ConcurCreateCashAdvancePdpFeedFileService().createDoneFileForPdpFile attempting to create .done file for generated PdpFeedFile: " + standardAccountingExtractFile.getFullyQualifiedRequestedCashAdvancesPdpFileName() + " generated IOException = "), ioe);
                     processingSuccessful = false;
                 } catch (FileStorageException fse) {
-                    LOG.error("processFile: ConcurCreateCashAdvancePdpFeedFileService().createDoneFileForPdpFile generated FileStorageException attempting to create .done file for generated PdpFeedFile: " + standardAccountingExtractFile.getFullyQualifiedRequestedCashAdvancesPdpFileName());
+                    LOG.error(new String("processFile: ConcurCreateCashAdvancePdpFeedFileService().createDoneFileForPdpFile attempting to create .done file for generated PdpFeedFile: " + standardAccountingExtractFile.getFullyQualifiedRequestedCashAdvancesPdpFileName() + " generated FileStorageException = "), fse);
                     processingSuccessful = false;
                 }
             }

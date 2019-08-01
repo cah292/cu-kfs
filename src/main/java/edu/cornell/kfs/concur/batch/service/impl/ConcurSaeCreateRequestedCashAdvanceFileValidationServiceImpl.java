@@ -29,7 +29,7 @@ import edu.cornell.kfs.concur.businessobjects.ValidationResult;
 import edu.cornell.kfs.concur.service.ConcurAccountValidationService;
 
 public class ConcurSaeCreateRequestedCashAdvanceFileValidationServiceImpl implements ConcurSaeCreateRequestedCashAdvanceFileValidationService {
-	private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvanceFileValidationServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvanceFileValidationServiceImpl.class);
     protected ConcurRequestedCashAdvanceService concurRequestedCashAdvanceService;
     protected ConcurAccountValidationService concurAccountValidationService;
     protected ConfigurationService configurationService;

@@ -13,7 +13,7 @@ import edu.cornell.kfs.concur.batch.service.ConcurRequestExtractFileService;
 import edu.cornell.kfs.concur.batch.service.ConcurRequestExtractReportService;
 
 public class ConcurRequestExtractCreatePdpFeedServiceImpl implements ConcurRequestExtractCreatePdpFeedService {
-	private static final Logger LOG = LogManager.getLogger(ConcurRequestExtractCreatePdpFeedServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ConcurRequestExtractCreatePdpFeedServiceImpl.class);
     protected ConcurBatchUtilityService concurBatchUtilityService;
     protected ConcurRequestExtractFileService concurRequestExtractFileService;
     protected ConcurRequestExtractReportService concurRequestExtractReportService;

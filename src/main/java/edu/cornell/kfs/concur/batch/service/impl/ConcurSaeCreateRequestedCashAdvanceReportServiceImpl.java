@@ -20,7 +20,7 @@ import edu.cornell.kfs.concur.batch.service.ConcurSaeCreateRequestedCashAdvanceR
 import edu.cornell.kfs.sys.service.ReportWriterService;
 
 public class ConcurSaeCreateRequestedCashAdvanceReportServiceImpl implements ConcurSaeCreateRequestedCashAdvanceReportService {
-	private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvanceReportServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvanceReportServiceImpl.class);
 
     protected ReportWriterService reportWriterService;
     protected ConfigurationService configurationService;

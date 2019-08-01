@@ -15,7 +15,7 @@ import edu.cornell.kfs.concur.batch.service.ConcurSaeCreateRequestedCashAdvanceP
 import edu.cornell.kfs.concur.batch.service.ConcurSaeCreateRequestedCashAdvanceReportService;
 
 public class ConcurSaeCreateRequestedCashAdvancePdpFeedServiceImpl implements ConcurSaeCreateRequestedCashAdvancePdpFeedService {
-	private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvancePdpFeedServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ConcurSaeCreateRequestedCashAdvancePdpFeedServiceImpl.class);
     protected ConcurBatchUtilityService concurBatchUtilityService;
     protected ConcurSaeCreateRequestedCashAdvanceFileService concurSaeCreateRequestedCashAdvanceFileService;
     protected ConcurSaeCreateRequestedCashAdvanceReportService concurSaeCreateRequestedCashAdvanceReportService;
@@ -40,7 +40,7 @@ public class ConcurSaeCreateRequestedCashAdvancePdpFeedServiceImpl implements Co
                             LOG.error("createPdpFeedsFromSaeRequetedCashAdvances: Cash Advance Creation processing was UNSUCCESSFUL for SAE File: " + standardAccountingExtractFullyQualifiedFileName);
                         }
                     } catch (Exception e) {
-                        LOG.error("createPdpFeedsFromSaeRequetedCashAdvances: Processing to create cash advance PDP Files from SAE File [" + standardAccountingExtractFullyQualifiedFileName + "] generated Exception: " + e.getMessage());
+                        LOG.error("createPdpFeedsFromSaeRequetedCashAdvances: Processing to create cash advance PDP Files from SAE File [" + standardAccountingExtractFullyQualifiedFileName + "] generated Exception: " + e);
                         e.printStackTrace();
                     } finally {
                         LOG.info("createPdpFeedsFromSaeRequetedCashAdvances: SAE cash advance creation processing does NOT remove .done file.");
